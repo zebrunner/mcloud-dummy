@@ -16,18 +16,17 @@ permissions:
   contents: read
 
 jobs:
-  # the reusable lint job of mcloud-conventions (CONVENTIONS.md); Go for the checks of tests/lint_project.sh
+  # the reusable lint job of mcloud-conventions (CONVENTIONS.md); the Go checks of tests/lint_project.sh use the Go of
+  # the runner, which downloads the toolchain of go.mod
   lint:
     uses: zebrunner/mcloud-conventions/.github/workflows/lint.yml@v1
-    with:
-      go-version-file: go.mod
 
   tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: Go tests (make test)
@@ -36,7 +35,7 @@ jobs:
           JUNIT_DIR: ${{ runner.temp }}/junit
       - name: Tests report
         if: ${{ !cancelled() }}
-        uses: mikepenz/action-junit-report@8a133bfa3ecb0ea9024c1e2ae788b4c25f6cdb9d # v6.6.2
+        uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6.7.1
         with:
           report_paths: ${{ runner.temp }}/junit/*.xml
           check_name: tests report
@@ -55,7 +54,7 @@ jobs:
           JUNIT_DIR: ${{ runner.temp }}/junit
       - name: Docker report
         if: ${{ !cancelled() }}
-        uses: mikepenz/action-junit-report@8a133bfa3ecb0ea9024c1e2ae788b4c25f6cdb9d # v6.6.2
+        uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6.7.1
         with:
           report_paths: ${{ runner.temp }}/junit/*.xml
           check_name: docker report
