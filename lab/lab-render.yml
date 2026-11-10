@@ -1,0 +1,20 @@
+---
+# renders zebrunner-farm and mcloud-devices.txt of the dummy lab without root (the lab keeps them in ../farm)
+- name: Render the farm of the dummy lab
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - defaults/main.yml
+    - roles/devices/vars/main.yml
+  tasks:
+    - name: Render zebrunner-farm
+      ansible.builtin.template:
+        src: roles/devices/templates/zebrunner-farm
+        dest: "{{ lab_farm }}/zebrunner-farm"
+        mode: "0755"
+    - name: Render mcloud-devices.txt
+      ansible.builtin.template:
+        src: roles/devices/templates/mcloud-devices.txt
+        dest: "{{ lab_farm }}/mcloud-devices.txt"
+        mode: "0644"

@@ -1,0 +1,42 @@
+---
+# The devices of mcloud-dummy. An entry with count > 1 is expanded into numbered devices with consecutive ports.
+# host: the address of this host the farm connects to (default: the hostname), e.g. the name of the container.
+control: ":8800"
+devices:
+  # adb connect <host>:15555 ... <host>:15556 (mcloud-agent: connection android-sim, address <host>:<port>)
+  - platform: android
+    count: 2
+    serial: dummy-android-
+    name: Dummy Pixel
+    model: Dummy Pixel
+    manufacturer: Zebrunner
+    osVersion: "14"
+    abi: x86_64
+    width: 720
+    height: 1280
+    density: 320
+    port: 15555
+    bootTime: 3s
+    fps: 10
+
+  - platform: android
+    serial: dummy-tablet-
+    name: Dummy Tab
+    model: Dummy Tab
+    type: tablet
+    osVersion: "13"
+    port: 15565
+
+  # WebDriverAgent on <host>:18100, MJPEG on <host>:18101, the next device on 18102/18103
+  # (mcloud-agent: connection proxy, address <host>, wda_port, mjpeg_port)
+  - platform: ios
+    count: 2
+    serial: 00008110-000A1B2C3D4E0000
+    name: Dummy iPhone
+    model: iPhone
+    device: iPhone15,2
+    osVersion: "17.4"
+    width: 390
+    height: 844
+    scale: 3
+    wdaPort: 18100

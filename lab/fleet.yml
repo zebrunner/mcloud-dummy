@@ -1,0 +1,101 @@
+---
+# The varied fleet of the lab: the profiles are the models of the demo farm, made by
+# `mcloud-dummy clone -stf <its STF> -count 8` (the counts, the locales and the time zones added by hand).
+# mcloud-dummy farm-devices -config fleet.yml -host mcloud-dummy -vars ../agent/roles/devices/vars/main.yml
+control: ":8800"
+host: mcloud-dummy
+profiles:
+  iphone-15-18-3:
+    platform: ios
+    model: iPhone_15
+    manufacturer: Apple
+    osVersion: "18.3"
+    width: 393
+    height: 852
+    scale: 3
+  iphone-xr-18-7-11:
+    platform: ios
+    model: iPhone_XR
+    manufacturer: Apple
+    osVersion: 18.7.11
+    width: 414
+    height: 896
+    scale: 2
+  pixel-3-xl-12:
+    platform: android
+    model: Pixel_3_XL
+    manufacturer: GOOGLE
+    device: crosshatch
+    osVersion: "12"
+    sdk: 31
+    abi: arm64-v8a
+    width: 1440
+    height: 2960
+    density: 560
+  pixel-8-pro-16:
+    platform: android
+    model: Pixel_8_Pro
+    manufacturer: GOOGLE
+    device: husky
+    osVersion: "16"
+    sdk: 36
+    abi: arm64-v8a
+    width: 1008
+    height: 2244
+    density: 360
+  samsung-galaxy-s23-fe-14:
+    platform: android
+    model: Samsung_Galaxy_S23_FE
+    manufacturer: SAMSUNG
+    device: r11sxeea
+    osVersion: "14"
+    sdk: 34
+    abi: arm64-v8a
+    width: 1080
+    height: 2340
+    density: 450
+  samsung-galaxy-s24-14:
+    platform: android
+    model: Samsung_Galaxy_S24
+    manufacturer: SAMSUNG
+    device: e1sxeea
+    osVersion: "14"
+    sdk: 34
+    abi: arm64-v8a
+    width: 1080
+    height: 2340
+    density: 480
+  samsung-galaxy-s24-ultra-14:
+    platform: android
+    model: Samsung_Galaxy_S24_Ultra
+    manufacturer: SAMSUNG
+    device: e3qxeea
+    osVersion: "14"
+    sdk: 34
+    abi: arm64-v8a
+    width: 1080
+    height: 2340
+    density: 450
+devices:
+  - platform: android
+    count: 8
+    port: 15555
+    seed: 1
+    batteryRate: 0.2
+    vary:
+      profile: [pixel-3-xl-12, pixel-8-pro-16, samsung-galaxy-s23-fe-14, samsung-galaxy-s24-14, samsung-galaxy-s24-ultra-14]
+      battery: "5-100"
+      charging: [true, true, false]
+      network: [wifi, wifi, cellular, none]
+      rotation: [0, 0, 0, 90]
+      locale: [en-US, de-DE, ja-JP]
+      timeZone: [UTC, Europe/Berlin, America/New_York]
+  - platform: ios
+    count: 4
+    wdaPort: 18100
+    seed: 1
+    vary:
+      profile: [iphone-15-18-3, iphone-xr-18-7-11]
+      battery: "5-100"
+      charging: [true, true, false]
+      network: [wifi, wifi, cellular]

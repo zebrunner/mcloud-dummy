@@ -1,0 +1,1454 @@
+{
+  "server": "uiautomator2",
+  "source": "Pixel 8 Pro, Android 16, UiAutomator2 server 9.10.5",
+  "recorded": "2026-11-10",
+  "steps": [
+    {
+      "name": "status",
+      "method": "GET",
+      "path": "/status",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "build": {
+            "version": "string",
+            "versionCode": "number"
+          },
+          "message": "string",
+          "ready": "bool"
+        }
+      },
+      "sample": {
+        "sessionId": "None",
+        "value": {
+          "build": {
+            "version": "9.10.5",
+            "versionCode": 251
+          },
+          "message": "UiAutomator2 Server is ready to accept commands",
+          "ready": true
+        }
+      }
+    },
+    {
+      "name": "new session",
+      "method": "POST",
+      "path": "/session",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "capabilities": {
+            "alwaysMatch": {},
+            "firstMatch": [
+              {}
+            ]
+          },
+          "sessionId": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "capabilities": {
+            "firstMatch": [
+              {}
+            ],
+            "alwaysMatch": {}
+          },
+          "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d"
+        }
+      }
+    },
+    {
+      "name": "session details",
+      "method": "GET",
+      "path": "/session/{sid}",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "lastScrollData": "null"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "lastScrollData": null
+        }
+      }
+    },
+    {
+      "name": "sessions",
+      "method": "GET",
+      "path": "/sessions",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": [
+          {
+            "capabilities": {},
+            "id": "string",
+            "sessionId": "string"
+          }
+        ]
+      },
+      "sample": {
+        "sessionId": "None",
+        "value": [
+          {
+            "id": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+            "capabilities": {},
+            "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get settings",
+      "method": "GET",
+      "path": "/session/{sid}/appium/settings",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "actionAcknowledgmentTimeout": "number",
+          "allowInvisibleElements": "bool",
+          "alwaysTraversableViewClasses": "string",
+          "currentDisplayId": "number",
+          "disableIdLocatorAutocompletion": "bool",
+          "elementResponseAttributes": "string",
+          "enableMultiWindows": "bool",
+          "enableNotificationListener": "bool",
+          "enableTopmostWindowFromActivePackage": "bool",
+          "enforceXPath1": "bool",
+          "ignoreUnimportantViews": "bool",
+          "includeA11yActionsInPageSource": "bool",
+          "includeExtraRenderingInfo": "bool",
+          "includeExtrasInPageSource": "bool",
+          "keyInjectionDelay": "number",
+          "limitXPathContextScope": "bool",
+          "mjpegBilinearFiltering": "bool",
+          "mjpegScalingFactor": "number",
+          "mjpegServerFramerate": "number",
+          "mjpegServerPort": "number",
+          "mjpegServerScreenshotQuality": "number",
+          "normalizeTagNames": "bool",
+          "scrollAcknowledgmentTimeout": "number",
+          "serverPort": "number",
+          "shouldUseCompactResponses": "bool",
+          "shutdownOnPowerDisconnect": "bool",
+          "simpleBoundsCalculation": "bool",
+          "snapshotMaxDepth": "number",
+          "trackScrollEvents": "bool",
+          "useResourcesForOrientationDetection": "bool",
+          "waitForIdleTimeout": "number",
+          "waitForSelectorTimeout": "number",
+          "wakeLockTimeout": "number"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "includeExtraRenderingInfo": false,
+          "allowInvisibleElements": false,
+          "elementResponseAttributes": "name,text",
+          "snapshotMaxDepth": 70,
+          "includeA11yActionsInPageSource": false,
+          "mjpegBilinearFiltering": false,
+          "waitForSelectorTimeout": 10000,
+          "serverPort": 6790,
+          "ignoreUnimportantViews": false,
+          "simpleBoundsCalculation": false,
+          "enableNotificationListener": true,
+          "limitXPathContextScope": true,
+          "includeExtrasInPageSource": false,
+          "normalizeTagNames": false,
+          "trackScrollEvents": true,
+          "scrollAcknowledgmentTimeout": 200,
+          "enableTopmostWindowFromActivePackage": false,
+          "enableMultiWindows": false,
+          "useResourcesForOrientationDetection": false,
+          "currentDisplayId": 0,
+          "shouldUseCompactResponses": true,
+          "wakeLockTimeout": 86396974,
+          "shutdownOnPowerDisconnect": true,
+          "mjpegServerPort": 7810,
+          "mjpegScalingFactor": 50,
+          "alwaysTraversableViewClasses": "",
+          "disableIdLocatorAutocompletion": false,
+          "enforceXPath1": false,
+          "actionAcknowledgmentTimeout": 3000,
+          "mjpegServerScreenshotQuality": 50,
+          "keyInjectionDelay": 0,
+          "waitForIdleTimeout": 10000,
+          "mjpegServerFramerate": 10
+        }
+      }
+    },
+    {
+      "name": "update settings",
+      "method": "POST",
+      "path": "/session/{sid}/appium/settings",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "null"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": null
+      }
+    },
+    {
+      "name": "device info",
+      "method": "GET",
+      "path": "/session/{sid}/appium/device/info",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "androidId": "string",
+          "apiVersion": "string",
+          "bluetooth": {
+            "state": "string"
+          },
+          "brand": "string",
+          "carrierName": "string",
+          "displayDensity": "number",
+          "locale": "string",
+          "manufacturer": "string",
+          "model": "string",
+          "networks": [
+            {
+              "capabilities": {
+                "SSID": "null",
+                "linkDownBandwidthKbps": "number",
+                "linkUpstreamBandwidthKbps": "number",
+                "networkCapabilities": "string",
+                "signalStrength": "number",
+                "transportTypes": "string"
+              },
+              "detailedState": "string",
+              "extraInfo": "string",
+              "isAvailable": "bool",
+              "isConnected": "bool",
+              "isFailover": "bool",
+              "isRoaming": "bool",
+              "state": "string",
+              "subtype": "number",
+              "subtypeName": "string",
+              "type": "number",
+              "typeName": "string"
+            }
+          ],
+          "platformVersion": "string",
+          "realDisplaySize": "string",
+          "timeZone": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "androidId": "<redacted>",
+          "apiVersion": "36",
+          "bluetooth": {
+            "state": "ON"
+          },
+          "brand": "google",
+          "carrierName": "",
+          "displayDensity": 360,
+          "locale": "en_US",
+          "manufacturer": "Google",
+          "model": "Pixel 8 Pro",
+          "networks": [
+            {
+              "capabilities": {
+                "SSID": null,
+                "linkDownBandwidthKbps": 60000,
+                "linkUpstreamBandwidthKbps": 12000,
+                "networkCapabilities": "NET_CAPABILITY_NOT_METERED,NET_CAPABILITY_INTERNET,NET_CAPABILITY_NOT_RESTRICTED,NET_CAPABILITY_TRUSTED,NET_CAPABILITY_NOT_VPN,NET_CAPABILITY_VALIDATED,NET_CAPA... (180 characters)",
+                "signalStrength": -37,
+                "transportTypes": "TRANSPORT_WIFI"
+              },
+              "detailedState": "CONNECTED",
+              "extraInfo": "<redacted>",
+              "isAvailable": true,
+              "isConnected": true,
+              "isFailover": false,
+              "isRoaming": false,
+              "state": "CONNECTED",
+              "subtype": -1,
+              "subtypeName": "",
+              "type": 1,
+              "typeName": "WIFI"
+            }
+          ],
+          "platformVersion": "16",
+          "realDisplaySize": "1008x2244",
+          "timeZone": "Europe/Warsaw"
+        }
+      }
+    },
+    {
+      "name": "system bars",
+      "method": "GET",
+      "path": "/session/{sid}/appium/device/system_bars",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "statusBar": "number"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "statusBar": 151
+        }
+      }
+    },
+    {
+      "name": "pixel ratio",
+      "method": "GET",
+      "path": "/session/{sid}/appium/device/pixel_ratio",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "number"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": 2.25
+      }
+    },
+    {
+      "name": "display density",
+      "method": "GET",
+      "path": "/session/{sid}/appium/device/display_density",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "number"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": 360
+      }
+    },
+    {
+      "name": "battery info",
+      "method": "GET",
+      "path": "/session/{sid}/appium/device/battery_info",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "level": "number",
+          "status": "number"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "level": 0.77,
+          "status": 4
+        }
+      }
+    },
+    {
+      "name": "window size",
+      "method": "GET",
+      "path": "/session/{sid}/window/current/size",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "height": "number",
+          "width": "number"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "height": 2244,
+          "width": 1008
+        }
+      }
+    },
+    {
+      "name": "orientation",
+      "method": "GET",
+      "path": "/session/{sid}/orientation",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "PORTRAIT"
+      }
+    },
+    {
+      "name": "rotation",
+      "method": "GET",
+      "path": "/session/{sid}/rotation",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "x": "number",
+          "y": "number",
+          "z": "number"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "source",
+      "method": "GET",
+      "path": "/session/{sid}/source",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\r\n<hierarchy index=\"0\" class=\"hierarchy\" rotation=\"0\" width=\"1008\" height=\"2244\">\r\n  <android.widget.Fra... (182 characters)"
+      }
+    },
+    {
+      "name": "screenshot",
+      "method": "GET",
+      "path": "/session/{sid}/screenshot",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "iVBORw0KGgoAAAANSUhEUgAAA/AAAAjECAYAAAALs4RPAAAABHNCSVQICAgIfAhkiAAAAAFzUkdCAK7OHOkAACAASURBVHiclL2/zjXNsxVWNc8rc05gmcAOCJAMPyxIiOBEyAFygiXk3BIhF8CtcAGkJE4cEGEh... (184 characters)"
+      }
+    },
+    {
+      "name": "find by class name",
+      "method": "POST",
+      "path": "/session/{sid}/element",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "ELEMENT": "string",
+          "element-6066-11e4-a52e-4f735466cecf": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "ELEMENT": "00000000-0000-0014-ffff-ffff0000056c",
+          "element-6066-11e4-a52e-4f735466cecf": "00000000-0000-0014-ffff-ffff0000056c"
+        }
+      }
+    },
+    {
+      "name": "find all by class name",
+      "method": "POST",
+      "path": "/session/{sid}/elements",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": [
+          {
+            "ELEMENT": "string",
+            "element-6066-11e4-a52e-4f735466cecf": "string"
+          }
+        ]
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": [
+          {
+            "ELEMENT": "00000000-0000-0014-ffff-ffff0000056c",
+            "element-6066-11e4-a52e-4f735466cecf": "00000000-0000-0014-ffff-ffff0000056c"
+          },
+          {
+            "ELEMENT": "00000000-0000-0014-ffff-ffff0000056e",
+            "element-6066-11e4-a52e-4f735466cecf": "00000000-0000-0014-ffff-ffff0000056e"
+          }
+        ]
+      }
+    },
+    {
+      "name": "find by xpath",
+      "method": "POST",
+      "path": "/session/{sid}/element",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "ELEMENT": "string",
+          "element-6066-11e4-a52e-4f735466cecf": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "ELEMENT": "00000000-0000-0014-ffff-ffff7ffffffe",
+          "element-6066-11e4-a52e-4f735466cecf": "00000000-0000-0014-ffff-ffff7ffffffe"
+        }
+      }
+    },
+    {
+      "name": "find by uiautomator",
+      "method": "POST",
+      "path": "/session/{sid}/element",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "ELEMENT": "string",
+          "element-6066-11e4-a52e-4f735466cecf": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "ELEMENT": "00000000-0000-0014-ffff-ffff7ffffffe",
+          "element-6066-11e4-a52e-4f735466cecf": "00000000-0000-0014-ffff-ffff7ffffffe"
+        }
+      }
+    },
+    {
+      "name": "find with the W3C fields",
+      "method": "POST",
+      "path": "/session/{sid}/element",
+      "status": 400,
+      "error": "invalid argument",
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "error": "invalid argument",
+          "message": "java.lang.IllegalArgumentException: FindElementModel: The mandatory field 'selector' is not present in JSON",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.InvalidArgumentException: java.lang.IllegalArgumentException: FindElementModel: The mandatory field 'selector' is not p... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "find a missing element",
+      "method": "POST",
+      "path": "/session/{sid}/element",
+      "status": 404,
+      "error": "no such element",
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "error": "no such element",
+          "message": "An element could not be located on the page using the given search parameters",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.ElementNotFoundException: An element could not be located on the page using the given search parameters\n\tat io.appium.u... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "find all missing elements",
+      "method": "POST",
+      "path": "/session/{sid}/elements",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": []
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": []
+      }
+    },
+    {
+      "name": "find by an invalid xpath",
+      "method": "POST",
+      "path": "/session/{sid}/element",
+      "status": 400,
+      "error": "invalid selector",
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "error": "invalid selector",
+          "message": "org.eclipse.wst.xml.xpath2.processor.XPathParserException: CUP parser error: Parser error: line 1 col 5: ",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.InvalidSelectorException: org.eclipse.wst.xml.xpath2.processor.XPathParserException: CUP parser error: Parser error: li... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "find by an unknown strategy",
+      "method": "POST",
+      "path": "/session/{sid}/element",
+      "status": 400,
+      "error": "invalid selector",
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "error": "invalid selector",
+          "message": "Selector strategy 'bogus' is not supported. Only the following selector strategies are supported: [id, xpath, accessibility id, class name, -android uiautomator... (180 characters)",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.InvalidSelectorException: Selector strategy 'bogus' is not supported. Only the following selector strategies are suppor... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "find a child",
+      "method": "POST",
+      "path": "/session/{sid}/element/{el}/element",
+      "status": 404,
+      "error": "unknown command",
+      "shape": {
+        "sessionId": "null",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": null,
+        "value": {
+          "error": "unknown command",
+          "message": "The requested resource could not be found, or a request was received using an HTTP method that is not supported by the mapped resource",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.UnknownCommandException: The requested resource could not be found, or a request was received using an HTTP method that... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "find children",
+      "method": "POST",
+      "path": "/session/{sid}/element/{el}/elements",
+      "status": 404,
+      "error": "unknown command",
+      "shape": {
+        "sessionId": "null",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": null,
+        "value": {
+          "error": "unknown command",
+          "message": "The requested resource could not be found, or a request was received using an HTTP method that is not supported by the mapped resource",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.UnknownCommandException: The requested resource could not be found, or a request was received using an HTTP method that... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "element text",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/text",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": ""
+      }
+    },
+    {
+      "name": "element name",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/name",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "null"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": null
+      }
+    },
+    {
+      "name": "element rect",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/rect",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "height": "number",
+          "width": "number",
+          "x": "number",
+          "y": "number"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "height": 11,
+          "width": 880,
+          "x": 64,
+          "y": 242
+        }
+      }
+    },
+    {
+      "name": "element size",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/size",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "height": "number",
+          "width": "number"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "height": 11,
+          "width": 880
+        }
+      }
+    },
+    {
+      "name": "element location",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/location",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "x": "number",
+          "y": "number"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "x": 64,
+          "y": 242
+        }
+      }
+    },
+    {
+      "name": "element screenshot",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/screenshot",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "iVBORw0KGgoAAAANSUhEUgAAA3AAAAALCAYAAAA+529IAAAABHNCSVQICAgIfAhkiAAAAAFzUkdCAK7OHOkAACAASURBVHiclZ3ZliQ5jp4/kGbuHh6ZWUtmVld1jWbmaHTm6EIvoLfTo+pi1N1TS+6REe5mJHQB... (182 characters)"
+      }
+    },
+    {
+      "name": "active element",
+      "method": "GET",
+      "path": "/session/{sid}/element/active",
+      "status": 404,
+      "error": "no such element",
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "error": "no such element",
+          "message": "An element could not be located on the page using the given search parameters",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.ElementNotFoundException: An element could not be located on the page using the given search parameters\n\tat io.appium.u... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "attribute text",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/text",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": ""
+      }
+    },
+    {
+      "name": "attribute resource-id",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/resource-id",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "null"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": null
+      }
+    },
+    {
+      "name": "attribute class",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/class",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "android.widget.FrameLayout"
+      }
+    },
+    {
+      "name": "attribute package",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/package",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "com.google.android.apps.nexuslauncher"
+      }
+    },
+    {
+      "name": "attribute content-desc",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/content-desc",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "null"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": null
+      }
+    },
+    {
+      "name": "attribute bounds",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/bounds",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "[64,242][944,253]"
+      }
+    },
+    {
+      "name": "attribute displayed",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/displayed",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "true"
+      }
+    },
+    {
+      "name": "attribute enabled",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/enabled",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "true"
+      }
+    },
+    {
+      "name": "attribute clickable",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/clickable",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "false"
+      }
+    },
+    {
+      "name": "attribute focusable",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/focusable",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "false"
+      }
+    },
+    {
+      "name": "attribute focused",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/focused",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "false"
+      }
+    },
+    {
+      "name": "attribute checkable",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/checkable",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "false"
+      }
+    },
+    {
+      "name": "attribute checked",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/checked",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "false"
+      }
+    },
+    {
+      "name": "attribute selected",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/selected",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "false"
+      }
+    },
+    {
+      "name": "attribute scrollable",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/scrollable",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "false"
+      }
+    },
+    {
+      "name": "attribute long-clickable",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/long-clickable",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "false"
+      }
+    },
+    {
+      "name": "attribute password",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/password",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": "false"
+      }
+    },
+    {
+      "name": "attribute index",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/index",
+      "status": 404,
+      "error": "unknown command",
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "error": "unknown command",
+          "message": "'index' attribute is unknown for the element. Only the following attributes are supported: [checkable, checked, {class,className}, clickable, {content-desc,cont... (181 characters)",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.NoSuchAttributeException: 'index' attribute is unknown for the element. Only the following attributes are supported: [c... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "attribute unknown-attribute",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/attribute/unknown-attribute",
+      "status": 404,
+      "error": "unknown command",
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "error": "unknown command",
+          "message": "'unknown-attribute' attribute is unknown for the element. Only the following attributes are supported: [checkable, checked, {class,className}, clickable, {conte... (181 characters)",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.NoSuchAttributeException: 'unknown-attribute' attribute is unknown for the element. Only the following attributes are s... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "a missing element id",
+      "method": "GET",
+      "path": "/session/{sid}/element/00000000-0000-0000-0000-00000000dead/text",
+      "status": 404,
+      "error": "no such element",
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "error": "no such element",
+          "message": "The element identified by '00000000-0000-0000-0000-00000000dead' is not present in the cache or has expired. Try to find it again",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.ElementNotFoundException: The element identified by '00000000-0000-0000-0000-00000000dead' is not present in the cache ... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "alert text without an alert",
+      "method": "GET",
+      "path": "/session/{sid}/alert/text",
+      "status": 404,
+      "error": "no such alert",
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": {
+          "error": "no such alert",
+          "message": "No alert is present on the screen",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.NoAlertOpenException: No alert is present on the screen\n\tat io.appium.uiautomator2.utils.AlertHelpers.getAlertType(Aler... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "actions with a pause",
+      "method": "POST",
+      "path": "/session/{sid}/actions",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "null"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": null
+      }
+    },
+    {
+      "name": "clipboard",
+      "method": "POST",
+      "path": "/session/{sid}/appium/device/get_clipboard",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "string"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": ""
+      }
+    },
+    {
+      "name": "list windows",
+      "method": "POST",
+      "path": "/session/{sid}/appium/list_windows",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": [
+          {
+            "displayId": "number",
+            "isAccessibilityFocused": "bool",
+            "isActive": "bool",
+            "isFocused": "bool",
+            "isInPictureInPictureMode": "bool",
+            "layer": "number",
+            "packageName": "string",
+            "physicalDisplayId": "string",
+            "rect": {
+              "height": "number",
+              "width": "number",
+              "x": "number",
+              "y": "number"
+            },
+            "screenshot": "null",
+            "title": "null",
+            "type": "number",
+            "virtualDisplayId": "null",
+            "windowId": "number"
+          }
+        ]
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": [
+          {
+            "displayId": 0,
+            "isAccessibilityFocused": false,
+            "isActive": false,
+            "isFocused": false,
+            "isInPictureInPictureMode": false,
+            "layer": 1,
+            "packageName": "com.android.systemui",
+            "physicalDisplayId": "<redacted>",
+            "rect": {
+              "height": 113,
+              "width": 1008,
+              "x": 0,
+              "y": 0
+            },
+            "screenshot": null,
+            "title": null,
+            "type": 3,
+            "virtualDisplayId": null,
+            "windowId": 19
+          },
+          {
+            "displayId": 0,
+            "isAccessibilityFocused": false,
+            "isActive": true,
+            "isFocused": true,
+            "isInPictureInPictureMode": false,
+            "layer": 0,
+            "packageName": "com.google.android.apps.nexuslauncher",
+            "physicalDisplayId": "<redacted>",
+            "rect": {
+              "height": 2244,
+              "width": 1008,
+              "x": 0,
+              "y": 0
+            },
+            "screenshot": null,
+            "title": "Home",
+            "type": 1,
+            "virtualDisplayId": null,
+            "windowId": 20
+          }
+        ]
+      }
+    },
+    {
+      "name": "list displays",
+      "method": "POST",
+      "path": "/session/{sid}/appium/list_displays",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": [
+          {
+            "id": "number",
+            "isDefault": "bool",
+            "metrics": {
+              "density": "number",
+              "densityDpi": "number",
+              "heightPixels": "number",
+              "scaledDensity": "number",
+              "widthPixels": "number",
+              "xdpi": "number",
+              "ydpi": "number"
+            },
+            "name": "string",
+            "physicalId": "string",
+            "virtualId": "null"
+          }
+        ]
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": [
+          {
+            "id": 0,
+            "isDefault": true,
+            "metrics": {
+              "density": 2.25,
+              "densityDpi": 360,
+              "heightPixels": 2244,
+              "scaledDensity": 2.25,
+              "widthPixels": 1008,
+              "xdpi": 365.76,
+              "ydpi": 367.726
+            },
+            "name": "Built-in Screen",
+            "physicalId": "<redacted>",
+            "virtualId": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "an unknown command",
+      "method": "GET",
+      "path": "/session/{sid}/no/such/command",
+      "status": 404,
+      "error": "unknown command",
+      "shape": {
+        "sessionId": "null",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": null,
+        "value": {
+          "error": "unknown command",
+          "message": "The requested resource could not be found, or a request was received using an HTTP method that is not supported by the mapped resource",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.UnknownCommandException: The requested resource could not be found, or a request was received using an HTTP method that... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "a route of the driver only (window rect)",
+      "method": "GET",
+      "path": "/session/{sid}/window/rect",
+      "status": 404,
+      "error": "unknown command",
+      "shape": {
+        "sessionId": "null",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": null,
+        "value": {
+          "error": "unknown command",
+          "message": "The requested resource could not be found, or a request was received using an HTTP method that is not supported by the mapped resource",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.UnknownCommandException: The requested resource could not be found, or a request was received using an HTTP method that... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "a route of the driver only (displayed)",
+      "method": "GET",
+      "path": "/session/{sid}/element/{el}/displayed",
+      "status": 404,
+      "error": "unknown command",
+      "shape": {
+        "sessionId": "null",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": null,
+        "value": {
+          "error": "unknown command",
+          "message": "The requested resource could not be found, or a request was received using an HTTP method that is not supported by the mapped resource",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.UnknownCommandException: The requested resource could not be found, or a request was received using an HTTP method that... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "an unknown session",
+      "method": "GET",
+      "path": "/session/no-such-session/orientation",
+      "status": 404,
+      "error": "invalid session id",
+      "shape": {
+        "sessionId": "string",
+        "value": {
+          "error": "string",
+          "message": "string",
+          "stacktrace": "string"
+        }
+      },
+      "sample": {
+        "sessionId": "no-such-session",
+        "value": {
+          "error": "invalid session id",
+          "message": "The session identified by no-such-session is not known",
+          "stacktrace": "io.appium.uiautomator2.common.exceptions.NoSuchDriverException: The session identified by no-such-session is not known\n\tat io.appium.uiautomator2.handler.reques... (181 characters)"
+        }
+      }
+    },
+    {
+      "name": "delete session",
+      "method": "DELETE",
+      "path": "/session/{sid}",
+      "status": 200,
+      "error": null,
+      "shape": {
+        "sessionId": "string",
+        "value": "null"
+      },
+      "sample": {
+        "sessionId": "bddd4761-f21b-46c4-b961-4a4263dcf99d",
+        "value": null
+      }
+    }
+  ]
+}

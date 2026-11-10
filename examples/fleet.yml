@@ -1,0 +1,93 @@
+---
+# A varied fleet of mcloud-dummy: every device of an entry takes its own value of each field of `vary`.
+# A list is a value per device ([a, b], a repeated value is picked more often), "lo-hi" is a range of numbers.
+# pick: random (by seed: the same configuration makes the same devices) or cycle (in turn, a range evenly).
+# mcloud-dummy farm-devices -config fleet.yml -host mcloud-dummy prints the devices of mcloud-agent for it;
+# mcloud-dummy clone -stf <url> makes such profiles of the models of a real farm.
+control: ":8800"
+profiles:
+  pixel-8-pro:
+    platform: android
+    model: Pixel 8 Pro
+    manufacturer: Google
+    device: husky
+    osVersion: "16"
+    abi: arm64-v8a
+    width: 1344
+    height: 2992
+    density: 480
+  galaxy-s24:
+    platform: android
+    model: Galaxy S24
+    manufacturer: Samsung
+    device: e1s
+    osVersion: "14"
+    abi: arm64-v8a
+    width: 1080
+    height: 2340
+    density: 420
+  galaxy-tab-s9:
+    platform: android
+    model: Galaxy Tab S9
+    manufacturer: Samsung
+    type: tablet
+    osVersion: "14"
+    abi: arm64-v8a
+    width: 1600
+    height: 2560
+    density: 320
+  iphone-15:
+    platform: ios
+    model: iPhone 15
+    device: iPhone15,4
+    osVersion: "17.4"
+    width: 393
+    height: 852
+    scale: 3
+  ipad-air:
+    platform: ios
+    model: iPad Air
+    device: iPad13,16
+    type: tablet
+    osVersion: "17.4"
+    width: 820
+    height: 1180
+    scale: 2
+devices:
+  # 12 Android devices on adb ports 15555-15566: two Pixels per Galaxy S24 and Tab S9
+  - platform: android
+    count: 12
+    port: 15555
+    seed: 1
+    batteryRate: 0.5
+    vary:
+      profile: [pixel-8-pro, pixel-8-pro, galaxy-s24, galaxy-tab-s9]
+      battery: "5-100"
+      charging: [true, true, false]
+      network: [wifi, wifi, cellular, none]
+      rotation: [0, 0, 0, 90]
+      locale: [en-US, de-DE, ja-JP]
+      timeZone: [UTC, Europe/Berlin, America/New_York, Asia/Tokyo]
+
+  # the screens of an old fleet in turn, without profiles
+  - platform: android
+    count: 3
+    serial: dummy-legacy-
+    model: Dummy Legacy
+    osVersion: "11"
+    port: 15575
+    pick: cycle
+    vary:
+      screen: [480x854@240, 720x1280@320, 1080x1920@480]
+      battery: "15-45"
+
+  # 4 iOS devices on WebDriverAgent ports 18100, 18102...
+  - platform: ios
+    count: 4
+    wdaPort: 18100
+    seed: 1
+    vary:
+      profile: [iphone-15, iphone-15, ipad-air]
+      battery: "20-100"
+      charging: [true, false]
+      network: [wifi, cellular]

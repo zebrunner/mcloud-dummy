@@ -1,0 +1,253 @@
+package android
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"io"
+	"log/slog"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/zebrunner/mcloud-dummy/internal/config"
+	"github.com/zebrunner/mcloud-dummy/internal/ui"
+)
+
+func testDevice(t *testing.T) *Device {
+	t.Helper()
+	cfg, err := config.Parse([]byte("devices:\n  - platform: android\n    serial: test-\n    bootTime: 1ms\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := New(cfg.Devices[0], slog.New(slog.NewTextHandler(io.Discard, nil)))
+	d.bootAt = time.Now()
+	return d
+}
+
+func run(t *testing.T, d *Device, script string) (string, int) {
+	t.Helper()
+	var out bytes.Buffer
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	code := d.runShell(ctx, script, strings.NewReader(""), &out, &out)
+	return out.String(), code
+}
+
+func TestGetprop(t *testing.T) {
+	d := testDevice(t)
+	if out, _ := run(t, d, "getprop ro.build.version.sdk"); out != "34\n" {
+		t.Fatalf("sdk: %q", out)
+	}
+	out, _ := run(t, d, "getprop")
+	if !strings.Contains(out, "[ro.product.cpu.abi]: [x86_64]\n") || !strings.Contains(out, "[sys.boot_completed]: [1]\n") {
+		t.Fatalf("getprop: %q", out)
+	}
+	// adbkit waitBootComplete: an endless loop, the client closes the stream once it reads 1
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+	defer cancel()
+	var loop bytes.Buffer
+	code := d.runShell(ctx, "while getprop sys.boot_completed 2>/dev/null; do sleep 1; done", nil, &loop, &loop)
+	if !strings.HasPrefix(loop.String(), "1\n") || code == 0 {
+		t.Fatalf("boot loop: %q %d", loop.String(), code)
+	}
+}
+
+func TestBootGatesDumpsysDisplay(t *testing.T) {
+	d := testDevice(t)
+	d.SetFaults(Faults{BootStuck: true})
+	if out, _ := run(t, d, "dumpsys display 2>/dev/null | grep -A 20 DisplayDeviceInfo"); out != "" {
+		t.Fatalf("a device that is not booted has no display yet: %q", out)
+	}
+	d.SetFaults(Faults{})
+	if out, _ := run(t, d, "dumpsys display | grep -A 20 DisplayDeviceInfo"); !strings.Contains(out, "720 x 1280") {
+		t.Fatalf("display: %q", out)
+	}
+}
+
+func TestShellBasics(t *testing.T) {
+	d := testDevice(t)
+	out, code := run(t, d, `echo hi > /data/local/tmp/a.txt; echo more >> /data/local/tmp/a.txt; cat /data/local/tmp/a.txt; ls /nonexistent; echo "rc=$?"`)
+	if out != "hi\nmore\nls: /nonexistent: No such file or directory\nrc=1\n" || code != 0 {
+		t.Fatalf("got %q %d", out, code)
+	}
+	if out, code := run(t, d, "missingcmd"); code != 127 || !strings.Contains(out, "inaccessible or not found") {
+		t.Fatalf("unknown command: %q %d", out, code)
+	}
+	if out, _ := run(t, d, `if [ "$(id -u)" = 0 ]; then echo root; else echo shell; fi`); out != "shell\n" {
+		t.Fatalf("id: %q", out)
+	}
+	if out, _ := run(t, d, "ps --help | grep -c '^-A'"); out != "1\n" {
+		t.Fatalf("ps --help: %q", out)
+	}
+}
+
+func TestExecutableResourceAndProcesses(t *testing.T) {
+	d := testDevice(t)
+	_ = d.fs.WriteFile("/data/local/tmp/minicap", 0o100755, []byte("\x7fELF"), time.Now())
+	if out, _ := run(t, d, "[ -x /data/local/tmp/minicap ] && echo exec"); out != "exec\n" {
+		t.Fatalf("-x: %q", out)
+	}
+	out, _ := run(t, d, "LD_LIBRARY_PATH=/data/local/tmp exec /data/local/tmp/minicap -i")
+	var info map[string]any
+	if err := json.Unmarshal([]byte(out), &info); err != nil || info["width"].(float64) != 720 {
+		t.Fatalf("minicap -i: %q %v", out, err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	var mc bytes.Buffer
+	done := make(chan int)
+	go func() {
+		done <- d.runShell(ctx, "LD_LIBRARY_PATH=/data/local/tmp exec /data/local/tmp/minicap -S -Q 80 -P 720x1280@360x640/0", nil, &mc, &mc)
+	}()
+	deadline := time.Now().Add(2 * time.Second)
+	for len(d.procs.Find("minicap")) == 0 && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if _, ok := d.socket("localabstract:minicap"); !ok {
+		t.Fatal("minicap does not listen")
+	}
+	ps, _ := run(t, d, "ps 2>/dev/null | grep minicap")
+	if !strings.Contains(ps, "shell") || !strings.HasSuffix(strings.TrimSpace(ps), "minicap") {
+		t.Fatalf("ps: %q", ps)
+	}
+	pid := d.procs.Find("minicap")[0].PID
+	if _, code := run(t, d, "kill -15 "+itoa(pid)); code != 0 {
+		t.Fatal("kill failed")
+	}
+	select {
+	case code := <-done:
+		if code != 143 || !strings.HasPrefix(mc.String(), "PID: ") {
+			t.Fatalf("minicap ended with %d: %q", code, mc.String())
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("minicap did not end after kill")
+	}
+	cancel()
+	if _, ok := d.socket("localabstract:minicap"); ok {
+		t.Fatal("the socket stays after the process ended")
+	}
+}
+
+func itoa(n int) string {
+	b, _ := json.Marshal(n)
+	return string(b)
+}
+
+func TestSTFServiceVersionAndTelephony(t *testing.T) {
+	d := testDevice(t)
+	d.pkgs.pkgs[stfPackage] = &Package{Name: stfPackage, VersionName: "2.5.8", Path: "/data/app/jp.co.cyberagent.stf-1/base.apk", Granted: map[string]bool{}}
+	out, _ := run(t, d, "pm path jp.co.cyberagent.stf")
+	if out != "package:/data/app/jp.co.cyberagent.stf-1/base.apk\n" {
+		t.Fatalf("pm path: %q", out)
+	}
+	out, _ = run(t, d, "export CLASSPATH='/data/app/jp.co.cyberagent.stf-1/base.apk'; exec app_process /system/bin 'jp.co.cyberagent.stf.Agent' --version 2>/dev/null")
+	if out != "2.5.8" {
+		t.Fatalf("--version: %q", out)
+	}
+	out, _ = run(t, d, `export CLASSPATH='/data/app/jp.co.cyberagent.stf-1/base.apk'; if [ "$(id -u)" = 0 ] && command -v su >/dev/null 2>&1; then set -- su shell; else set --; fi; exec "$@" app_process /system/bin 'jp.co.cyberagent.stf.Agent' --telephony`)
+	if !strings.Contains(out, "imei=35") || !strings.Contains(out, "phoneNumber=+1555") {
+		t.Fatalf("--telephony: %q", out)
+	}
+	out, _ = run(t, d, "am start-foreground-service --user 0 -a 'jp.co.cyberagent.stf.ACTION_START' -n 'jp.co.cyberagent.stf/.Service'")
+	if strings.Contains(out, "Error") {
+		t.Fatalf("service: %q", out)
+	}
+	if _, ok := d.socket("localabstract:stfservice"); !ok {
+		t.Fatal("STFService does not listen")
+	}
+}
+
+func TestAppiumChecks(t *testing.T) {
+	d := testDevice(t)
+	d.pkgs.pkgs["io.appium.settings"] = &Package{Name: "io.appium.settings", VersionName: "5.12.0", VersionCode: 1, Launcher: ".Settings", Path: "/data/app/io.appium.settings-1/base.apk", Granted: map[string]bool{}}
+	out, _ := run(t, d, "dumpsys package io.appium.settings")
+	if !strings.Contains(out, "Package [io.appium.settings] (") || !strings.Contains(out, "versionName=5.12.0") {
+		t.Fatalf("dumpsys package: %q", out)
+	}
+	if out, _ := run(t, d, "dumpsys activity services io.appium.settings"); strings.Contains(out, "isForeground=true") {
+		t.Fatal("not started yet")
+	}
+	run(t, d, "am start -n io.appium.settings/.Settings -a android.intent.action.MAIN -c android.intent.category.LAUNCHER")
+	if out, _ := run(t, d, "dumpsys activity services io.appium.settings"); !strings.Contains(out, "isForeground=true") {
+		t.Fatalf("services: %q", out)
+	}
+	out, _ = run(t, d, "dumpsys window windows")
+	if !strings.Contains(out, "mCurrentFocus=Window{1a2b3c u0 io.appium.settings/.MainActivity}") {
+		t.Fatalf("focus: %q", out)
+	}
+	if out, _ := run(t, d, "am force-stop io.appium.settings; pidof io.appium.settings"); out != "" {
+		t.Fatalf("force-stop: %q", out)
+	}
+}
+
+func TestInputReachesTheApp(t *testing.T) {
+	d := testDevice(t)
+	button := d.App.Find("tap_button")
+	run(t, d, "input tap "+itoa(button.Rect.X+5)+" "+itoa(button.Rect.Y+5))
+	run(t, d, "input text hello%sworld")
+	if d.App.Taps() != 1 || d.App.Input() != "hello world" {
+		t.Fatalf("taps %d input %q", d.App.Taps(), d.App.Input())
+	}
+}
+
+func TestProtobufEnvelope(t *testing.T) {
+	msg := encodeEnvelope(7, true, msgGetDisplay, pbMsg(pbVarint(1, 0)))
+	env := decodeEnvelope(msg)
+	if !env.hasID || env.id != 7 || env.typ != msgGetDisplay {
+		t.Fatalf("%+v", env)
+	}
+	ev := decodeEnvelope(encodeEnvelope(0, false, msgEventRotation, pbMsg(pbVarint(1, 90))))
+	if ev.hasID || decodeFields(ev.message).uint(1) != 90 {
+		t.Fatalf("event: %+v", ev)
+	}
+}
+
+func TestStateBatteryAndNetwork(t *testing.T) {
+	cfg, err := config.Parse([]byte("devices:\n  - platform: android\n    battery: 42\n    charging: false\n    network: cellular\n    locale: de-DE\n    timeZone: Europe/Berlin\n    rotation: 90\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := New(cfg.Devices[0], slog.New(slog.NewTextHandler(io.Discard, nil)))
+	d.bootAt = time.Now()
+	out, _ := run(t, d, "dumpsys battery; dumpsys connectivity; getprop gsm.network.type; getprop persist.sys.locale; getprop persist.sys.timezone")
+	for _, want := range []string{"USB powered: false", "status: 3", "level: 42", "MOBILE[LTE] CONNECTED", "\nLTE\n", "de-DE", "Europe/Berlin"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("no %q in\n%s", want, out)
+		}
+	}
+	if d.App.Rotation() != 90 {
+		t.Errorf("rotation %d", d.App.Rotation())
+	}
+	events, unsubscribe := d.events().subscribe()
+	defer unsubscribe()
+	run(t, d, "dumpsys battery set level 7; dumpsys battery set ac 1; svc wifi enable")
+	if p := d.App.Power(); p.Level != 7 || !p.Charging || d.App.Network() != "wifi" {
+		t.Fatalf("%+v %s", p, d.App.Network())
+	}
+	got := map[int]bool{}
+	deadline := time.After(2 * time.Second)
+	for !got[msgEventBattery] || !got[msgEventConnectivity] {
+		select {
+		case m := <-events:
+			got[decodeEnvelope(m).typ] = true
+		case <-deadline:
+			t.Fatalf("events %v", got)
+		}
+	}
+	run(t, d, "dumpsys battery reset")
+	if p := d.App.Power(); p.Level != 42 || p.Charging {
+		t.Fatalf("reset: %+v", p)
+	}
+}
+
+func TestBatteryStatus(t *testing.T) {
+	d := testDevice(t)
+	d.App.SetPower("test", ui.Power{Level: 50, Charging: false})
+	if p := d.App.Power(); p.Status() != 3 {
+		t.Fatalf("status %d", p.Status())
+	}
+	d.App.SetPower("test", ui.Power{Level: 100, Charging: true})
+	if p := d.App.Power(); p.Status() != 5 {
+		t.Fatalf("full: %d", p.Status())
+	}
+}

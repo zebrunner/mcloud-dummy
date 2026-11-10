@@ -1,0 +1,13 @@
+# >>> mcloud-conventions: the shared part, changed in https://github.com/zebrunner/mcloud-conventions
+# IDE
+.idea/
+*.iml
+# the lint tools of `make lint`
+.venv/
+# macOS
+.DS_Store
+# <<< mcloud-conventions
+# the project: the binary of make build-bin, the caches of Python and ruff
+/bin/
+__pycache__/
+.ruff_cache/

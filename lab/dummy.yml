@@ -1,0 +1,26 @@
+---
+# the dummy devices of the lab (farm/mcloud-devices.txt connects them by the name of the container)
+control: ":8800"
+host: mcloud-dummy
+devices:
+  - platform: android
+    count: 2
+    serial: dummy-android-
+    name: Dummy Pixel
+    model: Dummy Pixel
+    osVersion: "14"
+    port: 15555
+  - platform: android
+    serial: dummy-tablet-
+    name: Dummy Tab
+    model: Dummy Tab
+    type: tablet
+    osVersion: "13"
+    port: 15565
+  - platform: ios
+    count: 2
+    serial: 00008110-000A1B2C3D4E0000
+    name: Dummy iPhone
+    model: iPhone
+    osVersion: "17.4"
+    wdaPort: 18100

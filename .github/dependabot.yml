@@ -1,0 +1,23 @@
+---
+version: 2
+updates:
+  # actions/* and the other actions of .github/workflows
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  # the pinned images (version and digest) of Dockerfile: golang of the build and alpine
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+  # the Go modules of go.mod
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+  # ruff, the project linter of tests/requirements-lint.txt
+  - package-ecosystem: pip
+    directory: /tests
+    schedule:
+      interval: weekly
