@@ -16,11 +16,10 @@ permissions:
   contents: read
 
 jobs:
-  # the reusable lint job of mcloud-conventions (CONVENTIONS.md); Go for the checks of tests/lint_project.sh
+  # the reusable lint job of mcloud-conventions (CONVENTIONS.md); the Go checks of tests/lint_project.sh use the Go of
+  # the runner, which downloads the toolchain of go.mod
   lint:
     uses: zebrunner/mcloud-conventions/.github/workflows/lint.yml@v1
-    with:
-      go-version-file: go.mod
 
   tests:
     runs-on: ubuntu-latest
