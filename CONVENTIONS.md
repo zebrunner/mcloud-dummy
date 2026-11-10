@@ -335,7 +335,7 @@ The rules above are the same for every repository; these ones come from the kind
 - `make test` is `go test -race ./...`, no docker and no device needed; with `JUNIT_DIR` gotestsum (pinned by version in the `Makefile`) writes the JUnit XML.
 - The program is the entrypoint of the image: it validates its configuration and exits with the codes of [Exit codes](#exit-codes), its healthcheck is the program itself (no shell tool in the image); it logs the text lines of `log/slog` with the levels of `LOGGER_LEVEL`, so it does not use `util/logger.sh`.
 - The build stage pins the Go image by version and digest and builds without cgo for `TARGETOS`/`TARGETARCH`; the final stage adds no package to its pinned base image.
-- The `lint` job passes `go-version-file: go.mod` to the reusable workflow for the Go checks.
+- The Go checks of the `lint` job use the Go of the runner, which downloads the toolchain of `go.mod`; the `tests` job sets up Go with `go-version-file: go.mod`.
 
 ### Ansible and host scripts
 
