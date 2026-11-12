@@ -6,6 +6,7 @@
 bin
 lab
 tests
+VERSION
 *.md
 .DS_Store
 **/.DS_Store
