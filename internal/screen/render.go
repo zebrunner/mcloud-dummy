@@ -46,6 +46,7 @@ type faceKey struct {
 type cacheKey struct {
 	w, h, quality int
 	png           bool
+	turn          int
 }
 
 type frame struct {
@@ -96,6 +97,17 @@ func (r *Renderer) PNG(w, h int) []byte {
 	return r.encoded(cacheKey{w: w, h: h, png: true})
 }
 
+// NaturalJPEG returns the screen as the framebuffer of the natural orientation holds it, w x h of the natural
+// orientation: the screen of the current rotation turned clockwise by the rotation, as the MJPEG stream of
+// WebDriverAgent without mjpegFixOrientation.
+func (r *Renderer) NaturalJPEG(w, h, quality int) []byte {
+	turn := r.app.Rotation()
+	if turn%180 != 0 {
+		w, h = h, w
+	}
+	return r.encoded(cacheKey{w: w, h: h, quality: quality, turn: turn})
+}
+
 func (r *Renderer) encoded(k cacheKey) []byte {
 	if k.w <= 0 || k.h <= 0 {
 		k.w, k.h = r.app.Size()
@@ -109,7 +121,7 @@ func (r *Renderer) encoded(k cacheKey) []byte {
 	if f, ok := r.cache[k]; ok && f.version == version && f.second == second {
 		return f.data
 	}
-	img := r.render(k.w, k.h)
+	img := turnClockwise(r.render(k.w, k.h), k.turn)
 	var buf bytes.Buffer
 	if k.png {
 		enc := png.Encoder{CompressionLevel: png.BestSpeed}
@@ -136,7 +148,7 @@ func (r *Renderer) render(w, h int) *image.RGBA {
 	bg := color.RGBA{0xf4, 0xf6, 0xf8, 0xff}
 	draw.Draw(img, img.Bounds(), &image.Uniform{bg}, image.Point{}, draw.Src)
 
-	unit := float64(min(dw, dh)) / 20
+	unit := float64(ui.LayoutUnit(dw, dh))
 	barH := int(unit * 2 * sy)
 	draw.Draw(img, image.Rect(0, 0, w, barH), &image.Uniform{r.accent}, image.Point{}, draw.Src)
 	info := r.app.Info()
@@ -254,6 +266,36 @@ func roundRect(img *image.RGBA, rc image.Rectangle, radius int, c color.Color) {
 		{rc.Min.X + radius, rc.Max.Y - radius - 1}, {rc.Max.X - radius - 1, rc.Max.Y - radius - 1}} {
 		circle(img, p.X, p.Y, radius, c)
 	}
+}
+
+// turnClockwise turns the image by 90, 180 or 270 degrees clockwise.
+func turnClockwise(src *image.RGBA, deg int) *image.RGBA {
+	deg = ((deg % 360) + 360) % 360
+	if deg == 0 {
+		return src
+	}
+	w, h := src.Bounds().Dx(), src.Bounds().Dy()
+	dw, dh := h, w
+	if deg == 180 {
+		dw, dh = w, h
+	}
+	dst := image.NewRGBA(image.Rect(0, 0, dw, dh))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			var dx, dy int
+			switch deg {
+			case 90:
+				dx, dy = h-1-y, x
+			case 180:
+				dx, dy = w-1-x, h-1-y
+			default:
+				dx, dy = y, w-1-x
+			}
+			si, di := src.PixOffset(x, y), dst.PixOffset(dx, dy)
+			copy(dst.Pix[di:di+4], src.Pix[si:si+4])
+		}
+	}
+	return dst
 }
 
 func circle(img *image.RGBA, cx, cy, radius int, c color.Color) {

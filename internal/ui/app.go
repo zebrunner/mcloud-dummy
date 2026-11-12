@@ -316,9 +316,16 @@ func (a *App) Layout() *Element {
 	return a.layoutLocked()
 }
 
+// LayoutUnit is the unit of the layout and of the screen of a w x h screen: a twentieth of the width, but the app
+// (about 30 units high) and the footer of the screen keep within 32 units of the height, for a wide screen too (a
+// tablet, landscape).
+func LayoutUnit(w, h int) int {
+	return max(1, min(min(w, h)/20, h/32))
+}
+
 func (a *App) layoutLocked() *Element {
 	w, h := a.sizeLocked()
-	u := min(w, h) / 20 // layout unit
+	u := LayoutUnit(w, h)
 	margin := u
 	rowH := u * 2
 	y := margin * 3

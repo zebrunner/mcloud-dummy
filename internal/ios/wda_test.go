@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"image/jpeg"
 	"io"
 	"log/slog"
 	"net"
@@ -105,20 +106,9 @@ func TestActionsTapInPoints(t *testing.T) {
 	}
 }
 
-// STF connects a plain socket to the MJPEG port and sends nothing: the stream must start at once.
-func TestMJPEGStartsWithoutRequest(t *testing.T) {
-	d := startDevice(t)
-	conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", d.Cfg.MJPEGPort))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer conn.Close()
-	_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
-	r := bufio.NewReader(conn)
-	status, _ := r.ReadString('\n')
-	if !strings.HasPrefix(status, "HTTP/1.0 200") {
-		t.Fatalf("status %q", status)
-	}
+// readMJPEGFrame reads the next JPEG of the MJPEG stream.
+func readMJPEGFrame(t *testing.T, r *bufio.Reader) []byte {
+	t.Helper()
 	var length int
 	for {
 		line, err := r.ReadString('\n')
@@ -136,6 +126,58 @@ func TestMJPEGStartsWithoutRequest(t *testing.T) {
 	if _, err := io.ReadFull(r, jpg); err != nil || !bytes.HasPrefix(jpg, []byte{0xff, 0xd8, 0xff}) {
 		t.Fatalf("frame: %v %x", err, jpg[:4])
 	}
+	return jpg
+}
+
+func openMJPEG(t *testing.T, d *Device) *bufio.Reader {
+	t.Helper()
+	conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", d.Cfg.MJPEGPort))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { conn.Close() })
+	_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	r := bufio.NewReader(conn)
+	status, _ := r.ReadString('\n')
+	if !strings.HasPrefix(status, "HTTP/1.0 200") {
+		t.Fatalf("status %q", status)
+	}
+	return r
+}
+
+// STF connects a plain socket to the MJPEG port and sends nothing: the stream must start at once.
+func TestMJPEGStartsWithoutRequest(t *testing.T) {
+	d := startDevice(t)
+	readMJPEGFrame(t, openMJPEG(t, d))
+}
+
+// WebDriverAgent streams the framebuffer, of the natural orientation, unless mjpegFixOrientation: the STF UI turns
+// the screen of a landscape device itself; landscape frames would be stretched into the portrait screen.
+func TestMJPEGFramesOfTheNaturalOrientation(t *testing.T) {
+	d := startDevice(t)
+	d.App.SetRotation("test", 90)
+	size := func(jpg []byte) (int, int) {
+		cfg, err := jpeg.DecodeConfig(bytes.NewReader(jpg))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return cfg.Width, cfg.Height
+	}
+	r := openMJPEG(t, d)
+	if w, h := size(readMJPEGFrame(t, r)); w != 390*3 || h != 844*3 {
+		t.Fatalf("landscape without mjpegFixOrientation: %dx%d", w, h)
+	}
+	_, s := call(t, d, "POST", "/session", map[string]any{"capabilities": map[string]any{}})
+	sid := s["value"].(map[string]any)["sessionId"].(string)
+	call(t, d, "POST", "/session/"+sid+"/appium/settings", map[string]any{"settings": map[string]any{"mjpegFixOrientation": true}})
+	d.App.Tick()
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		if w, h := size(readMJPEGFrame(t, r)); w == 844*3 && h == 390*3 {
+			return
+		}
+	}
+	t.Fatal("mjpegFixOrientation: the frames stay of the natural orientation")
 }
 
 func TestFaultDown(t *testing.T) {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"image/jpeg"
 	"io"
 	"log/slog"
 	"strings"
@@ -249,5 +250,104 @@ func TestBatteryStatus(t *testing.T) {
 	d.App.SetPower("test", ui.Power{Level: 100, Charging: true})
 	if p := d.App.Power(); p.Status() != 5 {
 		t.Fatalf("full: %d", p.Status())
+	}
+}
+
+// STF asks minicap for the size of the box of the browser; minicap streams the largest size of the aspect ratio of
+// the display within it (Projection.hpp of the native minicap, Main.kt of the apk), or the screen is stretched and
+// the touches of the STF UI miss the elements shown.
+func TestMinicapKeepsTheAspectRatio(t *testing.T) {
+	for _, tc := range []struct {
+		proj     string
+		apk      bool
+		vw, vh   int
+		fw, fh   int
+		describe string
+	}{
+		{"720x1280@705x824/0", true, 464, 824, 464, 824, "a phone in a wide box"},
+		{"1200x1920@705x824/0", true, 515, 824, 515, 824, "a tablet"},
+		{"1200x1920@900x700/0", false, 438, 700, 438, 700, "a box wider than high"},
+		{"720x1280@360x1000/0", false, 360, 640, 360, 640, "a high box"},
+		{"720x1280@705x824/90", true, 464, 824, 824, 464, "the frames of a landscape screen"},
+		{"720x1280@2000x3000/0", false, 720, 1280, 720, 1280, "the native minicap caps the size at the real one"},
+		{"720x1280@2000x3000/0", true, 1688, 3000, 1688, 3000, "the apk does not"},
+	} {
+		p := parseProjection(tc.proj, 720, 1280).fit(tc.apk)
+		fw, fh := p.frameSize()
+		if p.vw != tc.vw || p.vh != tc.vh || fw != tc.fw || fh != tc.fh {
+			t.Errorf("%s (%s apk=%v): virtual %dx%d frames %dx%d, want %dx%d frames %dx%d",
+				tc.describe, tc.proj, tc.apk, p.vw, p.vh, fw, fh, tc.vw, tc.vh, tc.fw, tc.fh)
+		}
+	}
+}
+
+func TestMinicapBanner(t *testing.T) {
+	d := testDevice(t)
+	d.App.SetRotation("test", 90)
+	p := parseProjection("720x1280@705x824/90", 720, 1280)
+	u32 := func(b []byte, at int) int { return int(b[at]) | int(b[at+1])<<8 | int(b[at+2])<<16 | int(b[at+3])<<24 }
+	native := minicapBanner(d, 7, p.fit(false), false)
+	apk := minicapBanner(d, 7, p.fit(true), true)
+	for _, tc := range []struct {
+		name           string
+		b              []byte
+		rw, rh, vw, vh int
+	}{
+		{"native: the natural orientation", native, 720, 1280, 464, 824},
+		{"apk: turned by the rotation", apk, 1280, 720, 824, 464},
+	} {
+		b := tc.b
+		if len(b) != 24 || u32(b, 2) != 7 || u32(b, 6) != tc.rw || u32(b, 10) != tc.rh || u32(b, 14) != tc.vw ||
+			u32(b, 18) != tc.vh || b[22] != 1 || b[23] != 2 {
+			t.Errorf("%s: %v", tc.name, b)
+		}
+	}
+}
+
+func jpegSize(t *testing.T, data []byte) (int, int) {
+	t.Helper()
+	cfg, err := jpeg.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		t.Fatalf("not a JPEG: %v", err)
+	}
+	return cfg.Width, cfg.Height
+}
+
+func TestMinicapScreenshotSize(t *testing.T) {
+	d := testDevice(t)
+	_ = d.fs.WriteFile("/data/local/tmp/minicap", 0o100755, []byte("\x7fELF"), time.Now())
+	_ = d.fs.WriteFile("/data/local/tmp/minicap.apk", 0o100644, []byte("PK"), time.Now())
+	out, _ := run(t, d, "/data/local/tmp/minicap -s -P 720x1280@705x824/0")
+	if w, h := jpegSize(t, []byte(out)); w != 464 || h != 824 {
+		t.Fatalf("native: %dx%d", w, h)
+	}
+	d.App.SetRotation("test", 90)
+	out, _ = run(t, d, "CLASSPATH=/data/local/tmp/minicap.apk app_process /system/bin io.devicefarmer.minicap.Main -s -P 720x1280@705x824/90")
+	if w, h := jpegSize(t, []byte(out)); w != 824 || h != 464 {
+		t.Fatalf("apk, landscape: %dx%d", w, h)
+	}
+}
+
+// STF sends the touches of minitouch in the natural orientation, from 0 to the max of its banner (the size - 1).
+func TestTouchOfTheNaturalOrientation(t *testing.T) {
+	d := testDevice(t) // 720x1280
+	for _, tc := range []struct {
+		rotation, x, y, wantX, wantY int
+	}{
+		{0, 0, 0, 0, 0},
+		{0, 719, 1279, 719, 1279},
+		{0, 800, -5, 719, 0},
+		{90, 0, 0, 0, 719},
+		{90, 719, 1279, 1279, 0},
+		{180, 0, 0, 719, 1279},
+		{270, 0, 0, 1279, 0},
+		{270, 719, 1279, 0, 719},
+	} {
+		d.App.SetRotation("test", tc.rotation)
+		w, h := d.App.Size()
+		x, y := naturalToDisplay(d, tc.x, tc.y)
+		if x != tc.wantX || y != tc.wantY || x < 0 || y < 0 || x >= w || y >= h {
+			t.Errorf("rotation %d: %d,%d -> %d,%d, want %d,%d within %dx%d", tc.rotation, tc.x, tc.y, x, y, tc.wantX, tc.wantY, w, h)
+		}
 	}
 }

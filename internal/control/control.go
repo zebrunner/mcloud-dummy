@@ -373,8 +373,11 @@ function post(el,path,body){return fetch('/api/devices/'+encodeURIComponent(seri
 function fault(el,f){post(el,'faults',f)}
 function state(el,st){post(el,'state',st)}
 function tap(e,img){
-  var r=img.getBoundingClientRect();
-  post(img,'input',{tap:[Math.round((e.clientX-r.left)/r.width*img.dataset.w),Math.round((e.clientY-r.top)/r.height*img.dataset.h)]})
+  // data-w and data-h are the natural orientation; the loaded screen tells the current one
+  var r=img.getBoundingClientRect(),w=+img.dataset.w,h=+img.dataset.h;
+  if(img.naturalWidth&&(img.naturalWidth>img.naturalHeight)!==(w>h)){var t=w;w=h;h=t}
+  var x=Math.floor((e.clientX-r.left)/r.width*w),y=Math.floor((e.clientY-r.top)/r.height*h);
+  post(img,'input',{tap:[Math.max(0,Math.min(w-1,x)),Math.max(0,Math.min(h-1,y))]})
 }
 setInterval(function(){document.querySelectorAll('.card img').forEach(function(img){
   img.src='/api/devices/'+encodeURIComponent(serial(img))+'/screen?width=216&t='+Date.now()})},1000)
