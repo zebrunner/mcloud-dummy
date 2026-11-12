@@ -35,12 +35,49 @@ func parseProjection(s string, defW, defH int) projection {
 	return p
 }
 
-// cmdMinicap emulates minicap: -i prints the display info, -s writes a JPEG, -S serves localabstract:minicap.
-func cmdMinicap(c *Cmd) int {
-	return runMinicap(c, c.Args[1:])
+// fit adjusts the virtual size as minicap does: the STF UI asks for the size of its box, minicap streams the largest
+// size of the aspect ratio of the real display within it. The native binary first caps it at the real size
+// (Projection.hpp forceMaximumSize and forceAspectRatio), the apk only keeps the aspect ratio (Main.kt, in float).
+func (p projection) fit(apk bool) projection {
+	if p.rw <= 0 || p.rh <= 0 || p.vw <= 0 || p.vh <= 0 {
+		return p
+	}
+	if apk {
+		aspect := float32(p.rw) / float32(p.rh)
+		if float32(p.vh) > float32(p.vw)/aspect {
+			p.vh = int(math.Round(float64(float32(p.vw) / aspect)))
+		} else {
+			p.vw = int(math.Round(float64(float32(p.vh) * aspect)))
+		}
+	} else {
+		p.vw, p.vh = min(p.vw, p.rw), min(p.vh, p.rh)
+		aspect := float64(p.rw) / float64(p.rh)
+		if p.vh > int(float64(p.vw)/aspect) {
+			p.vh = int(math.Round(float64(p.vw) / aspect))
+		} else {
+			p.vw = int(math.Round(float64(p.vh) * aspect))
+		}
+	}
+	p.vw, p.vh = max(p.vw, 1), max(p.vh, 1)
+	return p
 }
 
-func runMinicap(c *Cmd, args []string) int {
+// frameSize is the size of the JPEG frames: the virtual size turned by the rotation.
+func (p projection) frameSize() (int, int) {
+	if p.rot%180 != 0 {
+		return p.vh, p.vw
+	}
+	return p.vw, p.vh
+}
+
+// cmdMinicap emulates the native minicap binary: -i prints the display info, -s writes a JPEG, -S serves
+// localabstract:minicap.
+func cmdMinicap(c *Cmd) int {
+	return runMinicap(c, c.Args[1:], false)
+}
+
+// runMinicap runs minicap, the native binary or the apk (io.devicefarmer.minicap.Main of app_process).
+func runMinicap(c *Cmd, args []string, apk bool) int {
 	d := c.d
 	var proj string
 	quality, fps := 80, d.Cfg.FPS
@@ -75,7 +112,7 @@ func runMinicap(c *Cmd, args []string) int {
 			return 0
 		}
 	}
-	p := parseProjection(proj, d.Cfg.Width, d.Cfg.Height)
+	p := parseProjection(proj, d.Cfg.Width, d.Cfg.Height).fit(apk)
 	if info {
 		out, _ := json.Marshal(map[string]any{"id": 0, "width": d.Cfg.Width, "height": d.Cfg.Height,
 			"xdpi": float64(d.Cfg.Density), "ydpi": float64(d.Cfg.Density), "size": 5.5,
@@ -83,10 +120,7 @@ func runMinicap(c *Cmd, args []string) int {
 		c.printf("%s\n", out)
 		return 0
 	}
-	w, h := p.vw, p.vh
-	if p.rot%180 != 0 {
-		w, h = h, w
-	}
+	w, h := p.frameSize()
 	if shot {
 		_, _ = c.Stdout.Write(d.Screen.JPEG(w, h, quality))
 		return 0
@@ -98,28 +132,46 @@ func runMinicap(c *Cmd, args []string) int {
 	proc, done := d.procs.Start(c.ctx, "shell", "minicap", strings.Join(c.Args, " "))
 	defer done()
 	c.printf("PID: %d\n", proc.PID)
-	c.printf("INFO: Using projection %dx%d@%dx%d/%d\n", p.rw, p.rh, p.vw, p.vh, p.rot)
-	c.printf("INFO: (jni/minicap/minicap_dummy.cpp:1) Creating dummy display\n")
-	c.printf("INFO: (jni/minicap/JpgEncoder.cpp:64) Allocating %d bytes for JPG encoder\n", w*h*4)
+	if apk {
+		c.printf("INFO: %dx%d@%dx%d/%d\n", p.rw, p.rh, p.vw, p.vh, p.rot)
+	} else {
+		c.printf("INFO: Using projection %dx%d@%dx%d/%d\n", p.rw, p.rh, p.vw, p.vh, p.rot)
+		c.printf("INFO: (jni/minicap/minicap_dummy.cpp:1) Creating dummy display\n")
+		c.printf("INFO: (jni/minicap/JpgEncoder.cpp:64) Allocating %d bytes for JPG encoder\n", w*h*4)
+	}
 	unregister := d.RegisterSocket("localabstract:minicap", func(s *adb.Stream) {
-		serveMinicap(d, s, proc, proc.PID, p, w, h, quality, fps)
+		serveMinicap(d, s, proc, minicapBanner(d, proc.PID, p, apk), w, h, quality, fps)
 	})
 	defer unregister()
 	d.App.Log("minicap", "start", "%dx%d@%dx%d/%d", p.rw, p.rh, p.vw, p.vh, p.rot)
 	return waitDone(c, proc)
 }
 
-func serveMinicap(d *Device, s *adb.Stream, proc *Proc, pid int, p projection, w, h, quality, fps int) {
+// minicapBanner is the 24 bytes minicap sends first: the native binary has the real size and the fitted virtual size
+// of the natural orientation (minicap.cpp), the apk the current size of the display and the frame size, both turned
+// by the rotation (BaseProvider.kt getScreenSize, getTargetSize).
+func minicapBanner(d *Device, pid int, p projection, apk bool) []byte {
+	rw, rh, vw, vh := p.rw, p.rh, p.vw, p.vh
+	if apk {
+		rw, rh = d.App.Size()
+		vw, vh = p.frameSize()
+	}
 	banner := make([]byte, 24)
 	banner[0] = 1
 	banner[1] = 24
 	binary.LittleEndian.PutUint32(banner[2:], uint32(pid))
-	binary.LittleEndian.PutUint32(banner[6:], uint32(p.rw))
-	binary.LittleEndian.PutUint32(banner[10:], uint32(p.rh))
-	binary.LittleEndian.PutUint32(banner[14:], uint32(p.vw))
-	binary.LittleEndian.PutUint32(banner[18:], uint32(p.vh))
+	binary.LittleEndian.PutUint32(banner[6:], uint32(rw))
+	binary.LittleEndian.PutUint32(banner[10:], uint32(rh))
+	binary.LittleEndian.PutUint32(banner[14:], uint32(vw))
+	binary.LittleEndian.PutUint32(banner[18:], uint32(vh))
 	banner[22] = byte(p.rot / 90)
-	banner[23] = 0
+	// QUIRK_ALWAYS_UPRIGHT: minicap of a virtual display (the apk, the native one of the recent Android versions)
+	// streams the frames turned upright by the rotation; without it the STF UI turns the landscape frames once more
+	banner[23] = 2
+	return banner
+}
+
+func serveMinicap(d *Device, s *adb.Stream, proc *Proc, banner []byte, w, h, quality, fps int) {
 	if _, err := s.Write(banner); err != nil {
 		return
 	}
@@ -175,16 +227,18 @@ type contact struct {
 	pendingUp    bool
 }
 
-// naturalToDisplay maps a touch of the natural orientation to the coordinates of the rotated display.
+// naturalToDisplay maps a touch of the natural orientation (0 to the max of the minitouch banner, the size - 1) to
+// the pixels of the rotated display, clamped to the panel as the touch screen does.
 func naturalToDisplay(d *Device, x, y int) (int, int) {
-	w, h := d.Cfg.Width, d.Cfg.Height
+	maxX, maxY := d.Cfg.Width-1, d.Cfg.Height-1
+	x, y = max(0, min(x, maxX)), max(0, min(y, maxY))
 	switch d.App.Rotation() {
 	case 90:
-		return y, w - x
+		return y, maxX - x
 	case 180:
-		return w - x, h - y
+		return maxX - x, maxY - y
 	case 270:
-		return h - y, x
+		return maxY - y, x
 	}
 	return x, y
 }
@@ -295,7 +349,7 @@ func cmdAppProcess(c *Cmd) int {
 			c.errorf("Error: Could not find class '%s'\n", class)
 			return 1
 		}
-		return runMinicap(c, rest)
+		return runMinicap(c, rest, true)
 	case stfAgentClass:
 		pkg := d.pkgs.ByPath(classpath)
 		if pkg == nil || pkg.Name != stfPackage {

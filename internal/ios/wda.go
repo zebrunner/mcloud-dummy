@@ -812,6 +812,7 @@ func (d *Device) serveMJPEG(conn net.Conn) {
 		fps, _ := wd.Num(d.settings, "mjpegServerFramerate")
 		scale, _ := wd.Num(d.settings, "mjpegScalingFactor")
 		quality, _ := wd.Num(d.settings, "mjpegServerScreenshotQuality")
+		fixOrientation, _ := d.settings["mjpegFixOrientation"].(bool)
 		stopped := gen != d.mjpegGen
 		d.mu.Unlock()
 		if stopped {
@@ -831,11 +832,16 @@ func (d *Device) serveMJPEG(conn net.Conn) {
 		}
 		version, second := d.App.Version(), time.Now().Unix()
 		if version != lastVersion || second != lastSecond {
-			w, h := d.App.Size()
 			factor := scale / 100 * float64(d.Cfg.MJPEGScale) / 100
-			pw := int(float64(w*d.Cfg.Scale) * factor)
-			ph := int(float64(h*d.Cfg.Scale) * factor)
-			jpg := d.Screen.JPEG(pw, ph, int(quality))
+			var jpg []byte
+			if fixOrientation {
+				w, h := d.App.Size()
+				jpg = d.Screen.JPEG(int(float64(w*d.Cfg.Scale)*factor), int(float64(h*d.Cfg.Scale)*factor), int(quality))
+			} else {
+				// the frames of the framebuffer, as the STF UI expects them: it turns the landscape screen itself
+				w, h := d.Cfg.Width, d.Cfg.Height
+				jpg = d.Screen.NaturalJPEG(int(float64(w*d.Cfg.Scale)*factor), int(float64(h*d.Cfg.Scale)*factor), int(quality))
+			}
 			_, err := fmt.Fprintf(buf, "--BoundaryString\r\nContent-type: image/jpg\r\nContent-Length: %d\r\n\r\n", len(jpg))
 			if err == nil {
 				_, err = buf.Write(jpg)

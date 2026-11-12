@@ -93,3 +93,25 @@ func TestSources(t *testing.T) {
 		t.Fatal("element ids must be stable and distinct")
 	}
 }
+
+// Every element is on the screen and above the footer of the screen (from 1.6 units above the bottom), on the screens
+// wider than a phone too: a tablet, an iPad, landscape.
+func TestLayoutFitsTheScreen(t *testing.T) {
+	for _, s := range []struct {
+		platform string
+		w, h     int
+	}{{"android", 720, 1280}, {"android", 1200, 1920}, {"android", 1080, 1080}, {"ios", 390, 844}, {"ios", 820, 1180}, {"ios", 1024, 1366}} {
+		for _, rotation := range []int{0, 90} {
+			a := New(Info{Platform: s.platform, Width: s.w, Height: s.h, Model: "M", OSVersion: "1", Serial: "S"})
+			a.SetRotation("test", rotation)
+			w, h := a.Size()
+			u := LayoutUnit(w, h)
+			for _, e := range Elements(a.Layout())[1:] {
+				r := e.Rect
+				if r.X < 0 || r.Y < 0 || r.X+r.W > w || float64(r.Y+r.H) > float64(h)-1.6*float64(u) {
+					t.Errorf("%s %dx%d rotation %d: %s %+v out of the screen %dx%d (unit %d)", s.platform, s.w, s.h, rotation, e.ID, r, w, h, u)
+				}
+			}
+		}
+	}
+}
