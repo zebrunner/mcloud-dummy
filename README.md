@@ -16,7 +16,7 @@ The image is a static Go program on Alpine, built for `linux/amd64` and `linux/a
 | Component | Version |
 | --- | --- |
 | Base image | `alpine:3.24.3` (pinned by digest), no package added |
-| `mcloud-dummy` | built by `golang:1.26.5-alpine` (pinned by digest) without cgo, `/opt/zebrunner/mcloud-dummy` |
+| `mcloud-dummy` | built by `golang:1.27.3-alpine` (pinned by digest) without cgo, `/opt/zebrunner/mcloud-dummy` |
 | [mvdan/sh](https://github.com/mvdan/sh) | 3.14.1: the POSIX shell interpreter of the Android shell |
 | [androidbinary](https://github.com/shogo82148/androidbinary) | 1.0.6: the manifests of the installed APKs |
 | [xmlquery](https://github.com/antchfx/xmlquery) | 1.5.2: the xpath locators of Appium |
@@ -180,12 +180,13 @@ The iOS devices need `WDA_FILE: /dev/null` in the settings of mcloud-agent while
 | `GET /healthz` | `ok`: the healthcheck of the image |
 | `GET /api/devices` | the state of every device: booted, the adb connections, the processes and sockets, the installed packages, the opened services, the requests of WebDriverAgent, the counter and the input of the app |
 | `GET /api/devices/{serial}` | the state and the recent events: taps, typing, sessions, installs, unknown commands |
+| `GET /api/devices/{serial}/events` | the recent events only, the newest last |
 | `GET /api/devices/{serial}/commands` | Android: the recent shell commands with their exit codes and durations; iOS: the WebDriverAgent requests by route |
 | `GET /api/devices/{serial}/screen` | the screen as a JPEG, `?width=360` scales it, `&format=png` |
 | `POST /api/devices/{serial}/faults` | the failures below, the omitted ones are kept |
 | `POST /api/devices/{serial}/reboot` | reboots the device: Android closes the adb port for `rebootTime` and kills the processes, iOS closes its ports and drops the sessions |
 | `POST /api/devices/{serial}/disconnect` | Android: drops the adb connections, the device is offline until the connector reconnects; iOS: drops the WebDriverAgent sessions |
-| `POST /api/devices/{serial}/crash?process=minicap` | Android: kills the processes of the name (`minicap`, `minitouch`, `stf.agent`, `jp.co.cyberagent.stf`, `io.appium.uiautomator2.server`...) |
+| `POST /api/devices/{serial}/crash?process=minicap` | Android: kills the processes of the name (`minicap`, `minitouch`, `stf.agent`, `jp.co.cyberagent.stf`, `io.appium.uiautomator2.server`...); iOS: drops the WebDriverAgent sessions (a crash of WebDriverAgent), `process` is not needed |
 | `POST /api/devices/{serial}/input` | `{"tap":[x,y]}`, `{"swipe":[x1,y1,x2,y2]}`, `{"text":"..."}`, `{"key":"HOME"}`, `{"rotate":90}` (0, 90, 180 or 270), `{"lock":true}`; an invalid request answers 400 |
 | `POST /api/devices/{serial}/state` | `{"battery":5,"charging":false,"network":"none","rotation":90}`, the omitted fields are kept; STF and Appium see the change |
 | `POST /api/state` | the same for every device, `?platform=android` or `ios` for the devices of a platform |
