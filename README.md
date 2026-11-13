@@ -186,7 +186,7 @@ The iOS devices need `WDA_FILE: /dev/null` in the settings of mcloud-agent while
 | `POST /api/devices/{serial}/reboot` | reboots the device: Android closes the adb port for `rebootTime` and kills the processes, iOS closes its ports and drops the sessions |
 | `POST /api/devices/{serial}/disconnect` | Android: drops the adb connections, the device is offline until the connector reconnects; iOS: drops the WebDriverAgent sessions |
 | `POST /api/devices/{serial}/crash?process=minicap` | Android: kills the processes of the name (`minicap`, `minitouch`, `stf.agent`, `jp.co.cyberagent.stf`, `io.appium.uiautomator2.server`...) |
-| `POST /api/devices/{serial}/input` | `{"tap":[x,y]}`, `{"swipe":[x1,y1,x2,y2]}`, `{"text":"..."}`, `{"key":"HOME"}`, `{"rotate":90}`, `{"lock":true}` |
+| `POST /api/devices/{serial}/input` | `{"tap":[x,y]}`, `{"swipe":[x1,y1,x2,y2]}`, `{"text":"..."}`, `{"key":"HOME"}`, `{"rotate":90}` (0, 90, 180 or 270), `{"lock":true}`; an invalid request answers 400 |
 | `POST /api/devices/{serial}/state` | `{"battery":5,"charging":false,"network":"none","rotation":90}`, the omitted fields are kept; STF and Appium see the change |
 | `POST /api/state` | the same for every device, `?platform=android` or `ios` for the devices of a platform |
 
