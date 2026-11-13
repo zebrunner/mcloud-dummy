@@ -3,9 +3,11 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 	_ "time/tzdata" // the time zones of the devices in an image without zoneinfo
@@ -121,18 +123,52 @@ func Parse(data []byte) (*Config, error) {
 			return nil, fmt.Errorf("duplicate serial %q", d.Serial)
 		}
 		seen[d.Serial] = true
-		for _, p := range []int{d.Port, d.WDAPort, d.MJPEGPort} {
-			if p == 0 {
-				continue
+		for _, p := range d.ports() {
+			if p.port < 1 || p.port > 65535 {
+				return nil, fmt.Errorf("%s %d of %q must be 1-65535", p.field, p.port, d.Serial)
 			}
-			if other, ok := ports[p]; ok {
-				return nil, fmt.Errorf("port %d of %q is already used by %q", p, d.Serial, other)
+			if other, ok := ports[p.port]; ok {
+				return nil, fmt.Errorf("port %d of %q is already used by %q", p.port, d.Serial, other)
 			}
-			ports[p] = d.Serial
+			ports[p.port] = d.Serial
 		}
 	}
 	c.Devices = out
 	return &c, nil
+}
+
+type devicePort struct {
+	field string
+	port  int
+}
+
+// ports are the listen ports of a device of its platform.
+func (d Device) ports() []devicePort {
+	if d.Platform == "ios" {
+		return []devicePort{{"wdaPort", d.WDAPort}, {"mjpegPort", d.MJPEGPort}}
+	}
+	return []devicePort{{"port", d.Port}}
+}
+
+// CheckControl checks the listen address of the control API (Control, after the flags and the env override it): a
+// port 1-65535 that no device uses.
+func (c *Config) CheckControl() error {
+	_, portText, err := net.SplitHostPort(c.Control)
+	if err != nil {
+		return fmt.Errorf("control %q must be [host]:port: %w", c.Control, err)
+	}
+	port, err := strconv.Atoi(portText)
+	if err != nil || port < 1 || port > 65535 {
+		return fmt.Errorf("control %q: the port must be 1-65535", c.Control)
+	}
+	for _, d := range c.Devices {
+		for _, p := range d.ports() {
+			if p.port == port {
+				return fmt.Errorf("control %q: the port %d is the %s of %q", c.Control, port, p.field, d.Serial)
+			}
+		}
+	}
+	return nil
 }
 
 // expand makes the devices of an entry: the profile, then the fields of the entry, then the values of Vary, then
@@ -228,6 +264,9 @@ func number(n *Device, i int, rename bool) {
 var localeRe = regexp.MustCompile(`^[a-z]{2,3}(-[A-Z]{2})?$`)
 
 func commonDefaults(d *Device) error {
+	if d.Type != "phone" && d.Type != "tablet" && d.Type != "tv" {
+		return fmt.Errorf("type must be phone, tablet or tv, got %q", d.Type)
+	}
 	if d.Auth == "" {
 		d.Auth = "none"
 	}
