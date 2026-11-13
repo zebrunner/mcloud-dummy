@@ -36,7 +36,7 @@ type Faults struct {
 	NoMJPEG       bool          `json:"noMjpeg"`       // MJPEG port closed
 	Latency       time.Duration `json:"latency"`       // added before every WDA response
 	SingleSession bool          `json:"singleSession"` // a new session invalidates the previous one, like the real WDA
-	NotReady      bool          `json:"notReady"`      // /status answers 503
+	NotReady      bool          `json:"notReady"`      // every WDA request answers 500 unknown error
 }
 
 type session struct {
