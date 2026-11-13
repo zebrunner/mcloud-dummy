@@ -58,8 +58,8 @@ The variables of the container (the program takes them as the flags `-config`, `
 | Variable | Default | Description |
 | --- | --- | --- |
 | `DUMMY_CONFIG` | `/opt/zebrunner/devices.yml` | the YAML file of the devices, see below; without it (`make run`) the flags `-android <n>` and `-ios <n>` start numbered default devices |
-| `DUMMY_HOST` | the hostname | the address the farm reaches the dummies at (e.g. the name of the container): shown by the control API and reported by WebDriverAgent |
-| `DUMMY_CONTROL` | `:8800` | the listen address of the control API and the dashboard |
+| `DUMMY_HOST` | `host` of the devices file, the hostname | the address the farm reaches the dummies at (e.g. the name of the container): shown by the control API and reported by WebDriverAgent |
+| `DUMMY_CONTROL` | `control` of the devices file, `:8800` | the listen address of the control API and the dashboard: `[host]:port`, the port 1-65535 and not one of a device |
 | `LOGGER_LEVEL` | `INFO` | the minimum level of the log: `DEBUG` (also every shell command of a device), `INFO`, `WARN`, `ERROR` |
 
 The devices file (`examples/devices.yml` is a complete example): an entry with `count` greater than 1 is expanded into numbered devices with consecutive ports (iOS: two ports per device, WebDriverAgent and MJPEG). An unknown field is an error.
@@ -75,8 +75,8 @@ The devices file (`examples/devices.yml` is a complete example): an entry with `
 | `osVersion`, `sdk`, `abi` | `14`, by the version, `x86_64` | the Android version, its API level and the ABI (STF installs minicap and minitouch of the ABI) |
 | `width`, `height` | `720`x`1280` pixels, `390`x`844` points | the screen of the natural orientation |
 | `density`, `scale` | `320`, `3` | the density of Android (dpi), the scale of iOS |
-| `port` | `15555` | Android: the adb port |
-| `wdaPort`, `mjpegPort` | `18100`, `wdaPort` + 1 | iOS: the ports of WebDriverAgent and of its MJPEG stream |
+| `port` | `15555` | Android: the adb port, 1-65535 |
+| `wdaPort`, `mjpegPort` | `18100`, `wdaPort` + 1 | iOS: the ports of WebDriverAgent and of its MJPEG stream, 1-65535 |
 | `auth` | `none` | Android: the adb authentication, `none`, `accept` or `deny` (the device stays `unauthorized`) |
 | `bootTime`, `rebootTime` | `3s` (iOS `1s`), `10s` | how long the device boots (`sys.boot_completed`, `dumpsys display`) and how long it is gone during a reboot |
 | `fps` | `10` | the maximum frame rate of the screen streams |
@@ -232,9 +232,9 @@ curl -X POST 'localhost:8800/api/state?platform=ios' -d '{"battery":4,"charging"
 
 ## Exit codes and health
 
-- Exit code `0` means a problem a restart does not fix: an invalid configuration (the devices file, `LOGGER_LEVEL`), logged before the exit.
+- Exit code `0` means a problem a restart does not fix: an invalid configuration (the devices file: an unknown field or value, a port out of 1-65535 or used twice; `DUMMY_CONTROL`: not `[host]:port` or the port of a device; `LOGGER_LEVEL`), logged before the exit.
 - Exit code `1` asks for a restart: a port of a device or of the control API can't be opened (still in use).
-- The image healthcheck runs `mcloud-dummy -healthcheck`: `GET /healthz` of the control API.
+- The image healthcheck runs `mcloud-dummy -healthcheck`: `GET /healthz` of the control API on its port of `DUMMY_CONTROL` or of `control` of the devices file.
 
 ## Development
 
