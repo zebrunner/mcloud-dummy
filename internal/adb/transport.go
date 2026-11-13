@@ -274,6 +274,12 @@ func (s *Server) accept(ln net.Listener, ctx context.Context) {
 		}
 		t := newTransport(ctx, conn, s.Dev, s.Log)
 		s.mu.Lock()
+		if s.ln != ln {
+			// accepted while Stop closed the listener: the device is gone, Stop has not seen this connection
+			s.mu.Unlock()
+			_ = conn.Close()
+			return
+		}
 		s.transports[t] = struct{}{}
 		s.mu.Unlock()
 		go func() {

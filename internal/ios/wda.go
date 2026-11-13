@@ -888,24 +888,32 @@ func (l *tcpListener) start() error {
 	if l.conns == nil {
 		l.conns = map[net.Conn]struct{}{}
 	}
-	go func() {
-		for {
-			c, err := ln.Accept()
-			if err != nil {
-				return
-			}
-			l.mu.Lock()
-			l.conns[c] = struct{}{}
-			l.mu.Unlock()
-			go func() {
-				l.handle(c)
-				l.mu.Lock()
-				delete(l.conns, c)
-				l.mu.Unlock()
-			}()
-		}
-	}()
+	go l.serve(ln)
 	return nil
+}
+
+func (l *tcpListener) serve(ln net.Listener) {
+	for {
+		c, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		l.mu.Lock()
+		if l.ln != ln {
+			// accepted while stop closed the listener, stop has not seen this connection
+			l.mu.Unlock()
+			_ = c.Close()
+			return
+		}
+		l.conns[c] = struct{}{}
+		l.mu.Unlock()
+		go func() {
+			l.handle(c)
+			l.mu.Lock()
+			delete(l.conns, c)
+			l.mu.Unlock()
+		}()
+	}
 }
 
 func (l *tcpListener) stop() {
