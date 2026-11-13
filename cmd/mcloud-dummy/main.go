@@ -163,11 +163,12 @@ func checkHealth(addr string) int {
 	return 0
 }
 
-// farmDevices prints the device list of mcloud-agent for a configuration, or writes it into the vars of the agent.
+// farmDevices prints the device list of mcloud-agent for a configuration, or writes it into config/devices.yml of the
+// agent.
 func farmDevices(args []string) int {
 	fs := flag.NewFlagSet("farm-devices", flag.ExitOnError)
 	fs.Usage = func() {
-		fmt.Fprintln(fs.Output(), "usage: mcloud-dummy farm-devices -config devices.yml -host mcloud-dummy [-port-start 8600] [-vars roles/devices/vars/main.yml]")
+		fmt.Fprintln(fs.Output(), "usage: mcloud-dummy farm-devices -config devices.yml -host mcloud-dummy [-port-start 8600] [-vars config/devices.yml]")
 		fmt.Fprintln(fs.Output(), "prints the devices: list of mcloud-agent for the dummies (android-sim and proxy connections)")
 		fs.PrintDefaults()
 	}
@@ -175,7 +176,7 @@ func farmDevices(args []string) int {
 	host := fs.String("host", os.Getenv("DUMMY_HOST"), "the address of mcloud-dummy the connectors reach (env DUMMY_HOST)")
 	portStart := fs.Int("port-start", 8600, "the first port of the Appium and STF ports of the devices")
 	portStep := fs.Int("port-step", 20, fmt.Sprintf("the ports per device (at least %d)", farm.MinPortStep))
-	vars := fs.String("vars", "", "the vars of mcloud-agent to replace the devices: section of, in place")
+	vars := fs.String("vars", "", "config/devices.yml of mcloud-agent to replace the devices: section of, in place")
 	_ = fs.Parse(args)
 	if *configPath == "" || *host == "" {
 		fs.Usage()

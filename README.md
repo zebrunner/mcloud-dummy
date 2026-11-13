@@ -113,10 +113,10 @@ devices:
 STF_TOKEN=... mcloud-dummy clone -stf https://farm.example.com -count 30 -o fleet.yml
 ```
 
-`mcloud-dummy farm-devices` prints the `devices:` list of mcloud-agent for a configuration (Android `android-sim` with `address <host>:<port>`, iOS `proxy` with the WebDriverAgent and MJPEG ports, the names without spaces, a block of `-port-step` ports per device from `-port-start` for Appium and STF), or replaces the `devices:` section of the vars of the agent in place with `-vars`:
+`mcloud-dummy farm-devices` prints the `devices:` list of mcloud-agent for a configuration (Android `android-sim` with `address <host>:<port>`, iOS `proxy` with the WebDriverAgent and MJPEG ports, the names without spaces, a block of `-port-step` ports per device from `-port-start` for Appium and STF), or replaces the `devices:` section of `config/devices.yml` of the agent in place with `-vars`:
 
 ```bash
-mcloud-dummy farm-devices -config fleet.yml -host mcloud-dummy -port-start 8600 -vars mcloud-agent/roles/devices/vars/main.yml
+mcloud-dummy farm-devices -config fleet.yml -host mcloud-dummy -port-start 8600 -vars mcloud-agent/config/devices.yml
 ```
 
 In the image: `docker run --rm -v $PWD:/w mcloud-dummy farm-devices -config /w/fleet.yml -host mcloud-dummy`.
@@ -144,7 +144,7 @@ The connector, STF and Appium use the `proxy` connection (`WIRELESS=true`): what
 
 ## In the farm
 
-The dummies are ordinary devices of `roles/devices/vars/main.yml` of mcloud-agent, e.g. with the container `mcloud-dummy` in the network of the devices:
+The dummies are ordinary devices of `config/devices.yml` of mcloud-agent, e.g. with the container `mcloud-dummy` in the network of the devices:
 
 ```yaml
 devices:
@@ -168,7 +168,7 @@ devices:
     max_port: 8670
 ```
 
-The iOS devices need `WDA_FILE: /dev/null` in the settings of mcloud-agent while its template turns an empty `WDA_FILE` into the volume `'/dev/null'` (with the quotes), which `docker run` refuses.
+The iOS devices need `WDA_FILE: /dev/null` in `config/settings.yml` of mcloud-agent while its template turns an empty `WDA_FILE` into the volume `'/dev/null'` (with the quotes), which `docker run` refuses.
 
 [lab/README.md](lab/README.md) describes the stand mcloud-dummy was verified on: an MCloud server and a node of dummy devices on one host, built from the develop branches.
 
