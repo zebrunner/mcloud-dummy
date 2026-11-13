@@ -283,6 +283,19 @@ func TestShellV2Stdin(t *testing.T) {
 	}
 }
 
+func TestShellV2OversizedPacketEndsTheStream(t *testing.T) {
+	h := startServer(t, shellDevice(func(cmd string, in io.Reader, out, _ io.Writer) int {
+		_, _ = io.Copy(io.Discard, in)
+		return 0
+	}, newMemFS()))
+	connect(h)
+	l, r := h.open("shell,v2,raw:cat")
+	hdr := []byte{shellStdin, 0, 0, 0, 0}
+	binary.LittleEndian.PutUint32(hdr[1:], maxShellPacket+1)
+	h.send(cmdWRTE, l, r, hdr)
+	h.readAll(l, r)
+}
+
 func TestSyncPushStatPull(t *testing.T) {
 	fsys := newMemFS()
 	h := startServer(t, shellDevice(nil, fsys))
