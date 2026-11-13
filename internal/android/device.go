@@ -168,7 +168,7 @@ func (d *Device) Start() error {
 	d.bootAt = time.Now().Add(d.Cfg.BootTime)
 	d.started = time.Now()
 	d.mu.Unlock()
-	go d.produceLogs()
+	go d.produceLogs(logInterval)
 	go d.App.DrainBattery(d.done, d.Cfg.BatteryRate)
 	return d.server.Start()
 }
