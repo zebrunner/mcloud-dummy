@@ -13,7 +13,7 @@ import (
 	"github.com/zebrunner/mcloud-dummy/internal/config"
 )
 
-// AgentDevice is a device of the `devices` list of mcloud-agent (roles/devices/vars/main.yml).
+// AgentDevice is a device of the `devices` list of mcloud-agent (config/devices.yml).
 type AgentDevice struct {
 	ID         string `yaml:"id"`
 	OS         string `yaml:"os"`
@@ -57,7 +57,7 @@ func AgentDevices(devices []config.Device, host string, portStart, step int) ([]
 	return out, nil
 }
 
-// MarshalDevices is the `devices:` section of the vars of mcloud-agent.
+// MarshalDevices is the `devices:` section of config/devices.yml of mcloud-agent.
 func MarshalDevices(devices []AgentDevice) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := yaml.NewEncoder(&buf)
@@ -68,7 +68,7 @@ func MarshalDevices(devices []AgentDevice) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// ReplaceDevices replaces the `devices:` section of the vars of mcloud-agent and keeps the rest of the file, the
+// ReplaceDevices replaces the `devices:` section of config/devices.yml of mcloud-agent and keeps the rest of the file, the
 // comments of the next key included.
 func ReplaceDevices(vars, section []byte) ([]byte, error) {
 	lines := strings.SplitAfter(string(vars), "\n")

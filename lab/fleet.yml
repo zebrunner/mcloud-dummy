@@ -1,7 +1,7 @@
 ---
 # The varied fleet of the lab: the profiles are the models of the demo farm, made by
 # `mcloud-dummy clone -stf <its STF> -count 8` (the counts, the locales and the time zones added by hand).
-# mcloud-dummy farm-devices -config fleet.yml -host mcloud-dummy -vars ../agent/roles/devices/vars/main.yml
+# mcloud-dummy farm-devices -config fleet.yml -host mcloud-dummy -vars ../agent/config/devices.yml
 control: ":8800"
 host: mcloud-dummy
 profiles:

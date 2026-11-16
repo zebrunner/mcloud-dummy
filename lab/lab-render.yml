@@ -1,20 +1,38 @@
 ---
-# renders zebrunner-farm and mcloud-devices.txt of the dummy lab without root (the lab keeps them in ../farm)
+# renders zebrunner-farm, its settings and mcloud-devices.txt of the dummy lab without root into lab_farm (the lab keeps
+# them in ../farm): the files of the role common of mcloud-agent with the settings of config/, as agent.yml loads them
 - name: Render the farm of the dummy lab
   hosts: localhost
   connection: local
   gather_facts: false
   vars_files:
-    - defaults/main.yml
-    - roles/devices/vars/main.yml
+    - roles/common/defaults/main.yml
+    - roles/devices/defaults/main.yml
+    - versions.yml
+    - config/settings.yml
+    - config/devices.yml
+  vars:
+    agent_dir: "{{ playbook_dir }}"
+    common_farm_os: linux
   tasks:
-    - name: Render zebrunner-farm
-      ansible.builtin.template:
-        src: roles/devices/templates/zebrunner-farm
+    - name: Copy zebrunner-farm
+      ansible.builtin.copy:
+        src: roles/common/files/zebrunner-farm
         dest: "{{ lab_farm }}/zebrunner-farm"
         mode: "0755"
+    - name: Render the settings of zebrunner-farm
+      ansible.builtin.template:
+        src: roles/common/templates/zebrunner-farm.env
+        dest: "{{ lab_farm }}/zebrunner-farm.env"
+        mode: "0600"
+    # the farm of the lab runs its own devices, not the ones of the host in /usr/local/bin
+    - name: Point zebrunner-farm to the devices of the lab
+      ansible.builtin.lineinfile:
+        path: "{{ lab_farm }}/zebrunner-farm.env"
+        regexp: "^MCLOUD_DEVICES="
+        line: "MCLOUD_DEVICES={{ lab_farm }}/mcloud-devices.txt"
     - name: Render mcloud-devices.txt
       ansible.builtin.template:
-        src: roles/devices/templates/mcloud-devices.txt
+        src: roles/common/templates/mcloud-devices.txt
         dest: "{{ lab_farm }}/mcloud-devices.txt"
         mode: "0644"
