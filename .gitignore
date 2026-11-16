@@ -7,7 +7,7 @@
 # macOS
 .DS_Store
 # <<< mcloud-conventions
-# the project: the binary of make build-bin, the caches of Python and ruff
+# the project: the binary of make binary, the caches of Python and ruff
 /bin/
 __pycache__/
 .ruff_cache/
