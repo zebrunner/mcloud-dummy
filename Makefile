@@ -31,6 +31,9 @@ GOTESTSUM := gotest.tools/gotestsum@v1.13.0
 IMAGE_REPO ?= public.ecr.aws/zebrunner/mcloud-dummy
 VERSION ?= dev
 PLATFORMS ?= linux/amd64,linux/arm64
+# the publish job of CI (mcloud-conventions) pushes each platform by digest (PUSH_OUTPUT) with its cache (PUSH_CACHE)
+PUSH_OUTPUT ?= --tag $(IMAGE_REPO):$(VERSION) --push
+PUSH_CACHE ?=
 
 .PHONY: help check lint test docker build push binary run e2e contract
 
@@ -57,7 +60,7 @@ push: ## the image IMAGE_REPO:VERSION for PLATFORMS, built by docker buildx and 
 	@[[ "$(VERSION)" != dev ]] || { echo "make push VERSION=<tag>: the tag of the image is required"; exit 1; }
 	@docker buildx inspect mcloud > /dev/null 2>&1 || docker buildx create --name mcloud --driver docker-container --driver-opt network=host > /dev/null
 	docker buildx build --builder mcloud --progress=plain --provenance=false --platform $(PLATFORMS) \
-	  --build-arg VERSION=$(VERSION) --tag $(IMAGE_REPO):$(VERSION) --push .
+	  --build-arg VERSION=$(VERSION) $(PUSH_CACHE) $(PUSH_OUTPUT) .
 
 binary: ## the binary bin/mcloud-dummy for this machine
 	CGO_ENABLED=0 go build -trimpath -o bin/mcloud-dummy ./cmd/mcloud-dummy
