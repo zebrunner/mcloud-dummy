@@ -91,6 +91,7 @@ type App struct {
 	lastTap  string
 	touches  []Touch
 	events   []Event
+	eventSeq uint64 // the number of the events ever logged
 	version  uint64
 	rotation int
 	locked   bool
@@ -231,6 +232,7 @@ func (a *App) logLocked(source, kind, detail string) {
 	if len(a.events) > maxEvents {
 		a.events = a.events[len(a.events)-maxEvents:]
 	}
+	a.eventSeq++
 }
 
 // Events returns the recent events, the newest last.
@@ -238,6 +240,15 @@ func (a *App) Events() []Event {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return append([]Event(nil), a.events...)
+}
+
+// EventsSince returns the recent events logged after the sequence number seq (0: all of them) and the sequence number
+// of the newest one, for the next call.
+func (a *App) EventsSince(seq uint64) ([]Event, uint64) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	n := min(a.eventSeq-min(seq, a.eventSeq), uint64(len(a.events)))
+	return append([]Event(nil), a.events[len(a.events)-int(n):]...), a.eventSeq
 }
 
 // Size of the screen in device coordinates for the current rotation.

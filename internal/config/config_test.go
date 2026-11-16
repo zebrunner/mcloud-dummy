@@ -216,3 +216,44 @@ func TestStateDefaults(t *testing.T) {
 		t.Fatalf("battery 0 unplugged: %d %v", *i.Battery, *i.Charging)
 	}
 }
+
+func TestInvalidDevices(t *testing.T) {
+	for _, tc := range []struct{ yaml, err string }{
+		{"  - platform: android\n    port: 70000\n", "port 70000"},
+		{"  - platform: android\n    port: -1\n", "port -1"},
+		{"  - platform: android\n    count: 2\n    port: 65535\n", "port 65536"},
+		{"  - platform: ios\n    wdaPort: 65535\n", "mjpegPort 65536"},
+		{"  - platform: ios\n    wdaPort: 99999\n    mjpegPort: 8101\n", "wdaPort 99999"},
+		{"  - platform: android\n    type: watch\n", "type must be phone, tablet or tv"},
+		{"  - platform: ios\n    type: car\n", "type must be phone, tablet or tv"},
+	} {
+		_, err := Parse([]byte("devices:\n" + tc.yaml))
+		if err == nil || !strings.Contains(err.Error(), tc.err) {
+			t.Errorf("%q: %v, want %q", tc.yaml, err, tc.err)
+		}
+	}
+}
+
+func TestCheckControl(t *testing.T) {
+	c, err := Parse([]byte("devices:\n  - platform: android\n    port: 15555\n  - platform: ios\n    wdaPort: 18100\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for control, want := range map[string]string{
+		":8800":           "",
+		"127.0.0.1:8800":  "",
+		"8800":            "must be [host]:port",
+		":0":              "the port must be 1-65535",
+		":70000":          "the port must be 1-65535",
+		":http":           "the port must be 1-65535",
+		":15555":          "the port 15555 is the port of",
+		"0.0.0.0:18101":   "the port 18101 is the mjpegPort of",
+		"localhost:18100": "the port 18100 is the wdaPort of",
+	} {
+		c.Control = control
+		err := c.CheckControl()
+		if want == "" && err != nil || want != "" && (err == nil || !strings.Contains(err.Error(), want)) {
+			t.Errorf("control %q: %v, want %q", control, err, want)
+		}
+	}
+}
