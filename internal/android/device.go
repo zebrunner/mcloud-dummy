@@ -52,7 +52,7 @@ type Device struct {
 	mu        sync.Mutex
 	props     map[string]string
 	settings  map[string]map[string]string
-	sockets   map[string]SocketHandler
+	sockets   map[string]*socketRegistration
 	bootAt    time.Time
 	faults    Faults
 	rebooting bool
@@ -79,7 +79,7 @@ func New(cfg config.Device, log *slog.Logger) *Device {
 		procs:    newProcs(),
 		logs:     newLogBuffer(),
 		settings: map[string]map[string]string{"global": {}, "secure": {}, "system": {}},
-		sockets:  map[string]SocketHandler{},
+		sockets:  map[string]*socketRegistration{},
 		faults:   Faults{Auth: cfg.Auth},
 		ime:      "com.android.inputmethod.latin/.LatinIME",
 		opened:   map[string]int{},
@@ -257,14 +257,22 @@ func (d *Device) SetProp(name, value string) {
 	d.mu.Unlock()
 }
 
-// RegisterSocket listens on a local socket ("localabstract:minicap", "tcp:6790"); the returned func unregisters it.
+// socketRegistration is a handler of a local socket; its address tells the registrations of a name apart.
+type socketRegistration struct{ h SocketHandler }
+
+// RegisterSocket listens on a local socket ("localabstract:minicap", "tcp:6790"), it replaces the earlier handler of
+// the name; the returned func unregisters it, unless a later handler has replaced it (a new minicap is started before
+// the old one exits).
 func (d *Device) RegisterSocket(name string, h SocketHandler) func() {
+	reg := &socketRegistration{h: h}
 	d.mu.Lock()
-	d.sockets[name] = h
+	d.sockets[name] = reg
 	d.mu.Unlock()
 	return func() {
 		d.mu.Lock()
-		delete(d.sockets, name)
+		if d.sockets[name] == reg {
+			delete(d.sockets, name)
+		}
 		d.mu.Unlock()
 	}
 }
@@ -272,8 +280,11 @@ func (d *Device) RegisterSocket(name string, h SocketHandler) func() {
 func (d *Device) socket(name string) (SocketHandler, bool) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	h, ok := d.sockets[name]
-	return h, ok
+	reg, ok := d.sockets[name]
+	if !ok {
+		return nil, false
+	}
+	return reg.h, true
 }
 
 // Open resolves a service of the adb protocol.
@@ -508,9 +519,13 @@ func (d *Device) httpOnSocket(ctx context.Context, name string, h http.Handler) 
 		}
 		<-s.Context().Done()
 	})
+	var once sync.Once
+	// the end of the process and the caller both stop it
 	stop := func() {
-		unregister()
-		_ = srv.Close()
+		once.Do(func() {
+			unregister()
+			_ = srv.Close()
+		})
 	}
 	go func() {
 		<-ctx.Done()

@@ -19,6 +19,9 @@ const (
 	shellWindowSize = 5
 )
 
+// maxShellPacket is the largest data of a shell v2 packet from the host: adb sends at most its max payload (256 KiB).
+const maxShellPacket = 1 << 20
+
 // ShellRequest is a parsed "shell[,args]:command" or "exec:command" service.
 type ShellRequest struct {
 	Command string
@@ -83,6 +86,11 @@ func ServeShell(s *Stream, req ShellRequest, run ShellRunner) {
 				return
 			}
 			n := binary.LittleEndian.Uint32(hdr[1:])
+			if n > maxShellPacket {
+				// not a packet of adb: the stream ends instead of allocating its length
+				_ = s.Close()
+				return
+			}
 			data := make([]byte, n)
 			if _, err := io.ReadFull(s, data); err != nil {
 				return
