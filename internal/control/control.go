@@ -4,6 +4,7 @@ package control
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -267,6 +268,10 @@ func (s *Server) input(w http.ResponseWriter, r *http.Request, d device) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if req.Rotate != nil && !validRotation(*req.Rotate) {
+		http.Error(w, errRotation.Error(), http.StatusBadRequest)
+		return
+	}
 	hit := ""
 	if req.Tap != nil {
 		hit = d.app.Tap("control", req.Tap[0], req.Tap[1])
@@ -310,10 +315,16 @@ func decodeState(r *http.Request) (stateRequest, error) {
 	if req.Network != nil && *req.Network != "wifi" && *req.Network != "cellular" && *req.Network != "none" {
 		return req, fmt.Errorf("network must be wifi, cellular or none")
 	}
-	if req.Rotation != nil && (*req.Rotation%90 != 0 || *req.Rotation < 0 || *req.Rotation > 270) {
-		return req, fmt.Errorf("rotation must be 0, 90, 180 or 270")
+	if req.Rotation != nil && !validRotation(*req.Rotation) {
+		return req, errRotation
 	}
 	return req, nil
+}
+
+var errRotation = errors.New("rotation must be 0, 90, 180 or 270")
+
+func validRotation(deg int) bool {
+	return deg%90 == 0 && deg >= 0 && deg <= 270
 }
 
 func (req stateRequest) apply(app *ui.App) {
