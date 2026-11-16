@@ -69,6 +69,10 @@ func main() {
 	if *controlAddr != "" {
 		cfg.Control = *controlAddr
 	}
+	if err := cfg.CheckControl(); err != nil {
+		log.Error("invalid configuration, a restart does not fix it", "err", err)
+		os.Exit(exitConfig)
+	}
 
 	srv := &control.Server{Host: cfg.Host}
 	for _, dc := range cfg.Devices {

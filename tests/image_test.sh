@@ -56,6 +56,9 @@ check_contains "the invalid LOGGER_LEVEL is logged" "LOGGER_LEVEL must be" "$out
 out="$(docker run --rm -e DUMMY_CONFIG=/nonexistent.yml "$IMAGE" 2>&1)"
 check "a missing configuration exits with 0" "0" "$?"
 check_contains "the missing configuration is logged" "invalid configuration" "$out"
+out="$(docker run --rm -e DUMMY_CONTROL=:15555 "$IMAGE" 2>&1)"
+check "a control port of a device exits with 0" "0" "$?"
+check_contains "the control port of a device is logged" "the port 15555 is the port of" "$out"
 
 section "startup"
 if docker run -d --name "${PREFIX}-run" -e DUMMY_HOST=dummy "$IMAGE" > /dev/null 2>&1 && wait_healthy 60; then
