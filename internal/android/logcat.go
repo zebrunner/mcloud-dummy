@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/zebrunner/mcloud-dummy/internal/ui"
 )
 
 // Log priorities of android.util.Log.
@@ -40,6 +42,9 @@ func newLogBuffer() *logBuffer {
 }
 
 const maxLogEntries = 2000
+
+// logInterval is how often the new events of the app and the heartbeat are written to logcat.
+const logInterval = 5 * time.Second
 
 func (b *logBuffer) add(prio byte, tag, msg string) {
 	b.mu.Lock()
@@ -108,21 +113,23 @@ func (e logEntry) text() string {
 		"??VDIWEF"[min(int(e.prio), 7)], e.tag, e.msg)
 }
 
-// produceLogs writes a heartbeat line every few seconds and the events of the app.
-func (d *Device) produceLogs() {
+// produceLogs writes the new events of the app and a heartbeat line every interval, until the device is stopped.
+func (d *Device) produceLogs(interval time.Duration) {
 	d.logs.add(prioInfo, "MCloudDummy", fmt.Sprintf("Booting %s (%s, Android %s)", d.Cfg.Serial, d.Cfg.Model, d.Cfg.OSVersion))
-	seen := 0
-	tick := time.NewTicker(5 * time.Second)
+	var seq uint64
+	tick := time.NewTicker(interval)
 	defer tick.Stop()
-	for range tick.C {
-		events := d.App.Events()
-		if len(events) < seen {
-			seen = 0
+	for {
+		select {
+		case <-d.done:
+			return
+		case <-tick.C:
 		}
-		for _, e := range events[seen:] {
+		var events []ui.Event
+		events, seq = d.App.EventsSince(seq)
+		for _, e := range events {
 			d.logs.add(prioInfo, "MCloudDummy", fmt.Sprintf("%s %s %s", e.Source, e.Kind, e.Detail))
 		}
-		seen = len(events)
 		d.logs.add(prioDebug, "MCloudDummy", fmt.Sprintf("heartbeat taps=%d", d.App.Taps()))
 	}
 }
