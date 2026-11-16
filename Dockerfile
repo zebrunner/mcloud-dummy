@@ -15,7 +15,8 @@ FROM alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c
 # the defaults of the configuration, all of them are documented in README.md
 ENV DUMMY_CONFIG=/opt/zebrunner/devices.yml \
     DUMMY_HOST="" \
-    DUMMY_CONTROL=":8800" \
+    # empty: the control of the devices file, :8800 without it
+    DUMMY_CONTROL="" \
     LOGGER_LEVEL=INFO
 
 WORKDIR /opt/zebrunner/

@@ -58,8 +58,8 @@ The variables of the container (the program takes them as the flags `-config`, `
 | Variable | Default | Description |
 | --- | --- | --- |
 | `DUMMY_CONFIG` | `/opt/zebrunner/devices.yml` | the YAML file of the devices, see below; without it (`make run`) the flags `-android <n>` and `-ios <n>` start numbered default devices |
-| `DUMMY_HOST` | the hostname | the address the farm reaches the dummies at (e.g. the name of the container): shown by the control API and reported by WebDriverAgent |
-| `DUMMY_CONTROL` | `:8800` | the listen address of the control API and the dashboard: `[host]:port`, the port 1-65535 and not one of a device |
+| `DUMMY_HOST` | `host` of the devices file, the hostname | the address the farm reaches the dummies at (e.g. the name of the container): shown by the control API and reported by WebDriverAgent |
+| `DUMMY_CONTROL` | `control` of the devices file, `:8800` | the listen address of the control API and the dashboard: `[host]:port`, the port 1-65535 and not one of a device |
 | `LOGGER_LEVEL` | `INFO` | the minimum level of the log: `DEBUG` (also every shell command of a device), `INFO`, `WARN`, `ERROR` |
 
 The devices file (`examples/devices.yml` is a complete example): an entry with `count` greater than 1 is expanded into numbered devices with consecutive ports (iOS: two ports per device, WebDriverAgent and MJPEG). An unknown field is an error.
@@ -234,7 +234,7 @@ curl -X POST 'localhost:8800/api/state?platform=ios' -d '{"battery":4,"charging"
 
 - Exit code `0` means a problem a restart does not fix: an invalid configuration (the devices file: an unknown field or value, a port out of 1-65535 or used twice; `DUMMY_CONTROL`: not `[host]:port` or the port of a device; `LOGGER_LEVEL`), logged before the exit.
 - Exit code `1` asks for a restart: a port of a device or of the control API can't be opened (still in use).
-- The image healthcheck runs `mcloud-dummy -healthcheck`: `GET /healthz` of the control API.
+- The image healthcheck runs `mcloud-dummy -healthcheck`: `GET /healthz` of the control API on its port of `DUMMY_CONTROL` or of `control` of the devices file.
 
 ## Development
 

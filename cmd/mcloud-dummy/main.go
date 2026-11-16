@@ -42,13 +42,20 @@ func main() {
 	androidCount := flag.Int("android", 0, "without a configuration: the number of Android devices (adb ports from 15555)")
 	iosCount := flag.Int("ios", 0, "without a configuration: the number of iOS devices (WDA/MJPEG ports from 18100)")
 	host := flag.String("host", os.Getenv("DUMMY_HOST"), "the address of this host the farm connects to (env DUMMY_HOST, default: the hostname)")
-	controlAddr := flag.String("control", os.Getenv("DUMMY_CONTROL"), "the listen address of the control API (env DUMMY_CONTROL, default :8800)")
+	controlAddr := flag.String("control", os.Getenv("DUMMY_CONTROL"), "the listen address of the control API (env DUMMY_CONTROL, default: control of the configuration, :8800)")
 	logLevel := flag.String("log-level", envOr("LOGGER_LEVEL", "INFO"), "DEBUG, INFO, WARN or ERROR (env LOGGER_LEVEL)")
 	healthcheck := flag.Bool("healthcheck", false, "checks the control API of a running mcloud-dummy and exits (the HEALTHCHECK of the image)")
 	flag.Parse()
 
 	if *healthcheck {
-		os.Exit(checkHealth(*controlAddr))
+		addr := *controlAddr
+		if addr == "" {
+			// the control of the devices file; an invalid file stops the program itself
+			if cfg, err := loadConfig(*configPath, *androidCount, *iosCount); err == nil {
+				addr = cfg.Control
+			}
+		}
+		os.Exit(checkHealth(addr))
 	}
 
 	var level slog.Level
