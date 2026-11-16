@@ -66,6 +66,7 @@ type Device struct {
 	streams    int
 	mjpegGen   int            // incremented when the MJPEG port is closed: the open streams end
 	apps       map[string]int // bundle id -> state (1 not running, 4 foreground)
+	rebooting  bool
 	done       chan struct{}
 }
 
@@ -143,20 +144,26 @@ func (d *Device) SetFaults(f Faults) {
 	d.mu.Lock()
 	old := d.faults
 	d.faults = f
+	// the reboot opens the ports by the faults when it ends
+	rebooting := d.rebooting
 	d.mu.Unlock()
 	d.App.Log("control", "faults", "%+v", f)
 	if f.Down != old.Down {
 		if f.Down {
 			d.wda.stop()
-		} else if err := d.wda.start(); err != nil {
-			d.Log.Error("WDA port can't be opened", "err", err)
+		} else if !rebooting {
+			if err := d.wda.start(); err != nil {
+				d.Log.Error("WDA port can't be opened", "err", err)
+			}
 		}
 	}
 	if f.NoMJPEG != old.NoMJPEG {
 		if f.NoMJPEG {
 			d.stopMJPEG()
-		} else if err := d.mjpeg.start(); err != nil {
-			d.Log.Error("MJPEG port can't be opened", "err", err)
+		} else if !rebooting {
+			if err := d.mjpeg.start(); err != nil {
+				d.Log.Error("MJPEG port can't be opened", "err", err)
+			}
 		}
 	}
 }
@@ -168,24 +175,42 @@ func (d *Device) Faults() Faults {
 	return d.faults
 }
 
-// Reboot closes the ports for the reboot time and drops the sessions.
+// Reboot closes the ports for the reboot time and drops the sessions; a reboot requested during one is ignored. The
+// device keeps running (Stop would end its battery simulation for good).
 func (d *Device) Reboot() {
-	d.App.Log("control", "reboot", "")
-	d.Stop()
 	d.mu.Lock()
+	if d.rebooting {
+		d.mu.Unlock()
+		return
+	}
+	d.rebooting = true
 	d.sessions = map[string]*session{}
 	d.last = ""
 	d.mu.Unlock()
+	d.App.Log("control", "reboot", "")
+	d.wda.stop()
+	d.stopMJPEG()
 	time.Sleep(d.Cfg.RebootTime)
-	f := d.Faults()
 	d.mu.Lock()
+	d.rebooting = false
 	d.started = time.Now()
+	f := d.faults
 	d.mu.Unlock()
+	// stopped during the reboot: the ports stay closed
+	select {
+	case <-d.done:
+		return
+	default:
+	}
 	if !f.Down {
-		_ = d.wda.start()
+		if err := d.wda.start(); err != nil {
+			d.Log.Error("WDA port can't be opened after the reboot", "err", err)
+		}
 	}
 	if !f.NoMJPEG {
-		_ = d.mjpeg.start()
+		if err := d.mjpeg.start(); err != nil {
+			d.Log.Error("MJPEG port can't be opened after the reboot", "err", err)
+		}
 	}
 }
 
