@@ -7,10 +7,13 @@ import (
 	"image/jpeg"
 	"io"
 	"log/slog"
+	"net/http"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/zebrunner/mcloud-dummy/internal/adb"
 	"github.com/zebrunner/mcloud-dummy/internal/config"
 	"github.com/zebrunner/mcloud-dummy/internal/ui"
 )
@@ -349,5 +352,42 @@ func TestTouchOfTheNaturalOrientation(t *testing.T) {
 		if x != tc.wantX || y != tc.wantY || x < 0 || y < 0 || x >= w || y >= h {
 			t.Errorf("rotation %d: %d,%d -> %d,%d, want %d,%d within %dx%d", tc.rotation, tc.x, tc.y, x, y, tc.wantX, tc.wantY, w, h)
 		}
+	}
+}
+
+func TestSocketUnregisterKeepsTheNewHandler(t *testing.T) {
+	d := testDevice(t)
+	const name = "localabstract:minicap"
+	unregisterOld := d.RegisterSocket(name, func(s *adb.Stream) {})
+	unregisterNew := d.RegisterSocket(name, func(s *adb.Stream) {})
+	unregisterOld()
+	if _, ok := d.socket(name); !ok {
+		t.Fatal("the old minicap exiting after the new one started removed the socket of the new one")
+	}
+	unregisterNew()
+	if _, ok := d.socket(name); ok {
+		t.Fatal("the socket stays after its handler exited")
+	}
+}
+
+func TestHTTPOnSocketStopsOnce(t *testing.T) {
+	d := testDevice(t)
+	const name = "tcp:6790"
+	ctxOld, cancelOld := context.WithCancel(context.Background())
+	stopOld := d.httpOnSocket(ctxOld, name, http.NotFoundHandler())
+	stopNew := d.httpOnSocket(context.Background(), name, http.NotFoundHandler())
+	// the process of the old server ends while its caller stops it too
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() { defer wg.Done(); cancelOld() }()
+	go func() { defer wg.Done(); stopOld() }()
+	wg.Wait()
+	time.Sleep(10 * time.Millisecond)
+	if _, ok := d.socket(name); !ok {
+		t.Fatal("the stop of the old UiAutomator2 server removed the socket of the new one")
+	}
+	stopNew()
+	if _, ok := d.socket(name); ok {
+		t.Fatal("the socket stays after the server stopped")
 	}
 }
