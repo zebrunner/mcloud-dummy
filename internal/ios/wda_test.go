@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -30,8 +31,14 @@ func freePort(t *testing.T) int {
 
 func startDevice(t *testing.T) *Device {
 	t.Helper()
+	return startDeviceWith(t, "")
+}
+
+// startDeviceWith starts a device with more fields of its entry ("    rebootTime: 100ms\n").
+func startDeviceWith(t *testing.T, fields string) *Device {
+	t.Helper()
 	wda, mjpeg := freePort(t), freePort(t)
-	cfg, err := config.Parse([]byte(fmt.Sprintf("devices:\n  - platform: ios\n    wdaPort: %d\n    mjpegPort: %d\n    bootTime: 1ms\n", wda, mjpeg)))
+	cfg, err := config.Parse([]byte(fmt.Sprintf("devices:\n  - platform: ios\n    wdaPort: %d\n    mjpegPort: %d\n    bootTime: 1ms\n%s", wda, mjpeg, fields)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,6 +199,57 @@ func TestFaultDown(t *testing.T) {
 	}
 }
 
+func TestRebootKeepsTheDeviceRunning(t *testing.T) {
+	d := startDeviceWith(t, "    rebootTime: 300ms\n")
+	var wg sync.WaitGroup
+	for range 3 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			d.Reboot()
+		}()
+	}
+	wg.Wait()
+	reboots := 0
+	for _, e := range d.App.Events() {
+		if e.Kind == "reboot" {
+			reboots++
+		}
+	}
+	if reboots != 1 {
+		t.Fatalf("the concurrent reboots are one reboot: %d", reboots)
+	}
+	select {
+	case <-d.done:
+		t.Fatal("the reboot stopped the device: its battery simulation ended")
+	default:
+	}
+	time.Sleep(5 * time.Millisecond) // the boot time
+	if code, _ := call(t, d, "GET", "/status", nil); code != 200 {
+		t.Fatalf("WDA is back after the reboot: %d", code)
+	}
+	d.Reboot()
+	time.Sleep(5 * time.Millisecond)
+	if code, _ := call(t, d, "GET", "/status", nil); code != 200 {
+		t.Fatalf("WDA is back after the second reboot: %d", code)
+	}
+}
+
+func TestFaultDuringRebootKeepsThePortsClosed(t *testing.T) {
+	d := startDeviceWith(t, "    rebootTime: 300ms\n")
+	d.SetFaults(Faults{Down: true})
+	go d.Reboot()
+	time.Sleep(50 * time.Millisecond)
+	d.SetFaults(Faults{})
+	if _, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/status", d.Cfg.WDAPort)); err == nil {
+		t.Fatal("WDA is closed until the reboot ends")
+	}
+	time.Sleep(400 * time.Millisecond)
+	if code, _ := call(t, d, "GET", "/status", nil); code != 200 {
+		t.Fatalf("WDA is back after the reboot: %d", code)
+	}
+}
+
 func TestBatteryAndDeviceInfo(t *testing.T) {
 	d := startDevice(t)
 	d.App.SetPower("test", ui.Power{Level: 30, Charging: false})
@@ -204,5 +262,39 @@ func TestBatteryAndDeviceInfo(t *testing.T) {
 	v = out["value"].(map[string]any)
 	if v["currentLocale"] != "en_US" || v["timeZone"] != "UTC" {
 		t.Fatalf("%v", v)
+	}
+}
+
+// pendingListener is a listener whose pending Accept returns its connection after Close, as a TCP listener does when
+// a connection arrives while it is being closed.
+type pendingListener struct{ conns chan net.Conn }
+
+func (l *pendingListener) Accept() (net.Conn, error) {
+	c, ok := <-l.conns
+	if !ok {
+		return nil, net.ErrClosed
+	}
+	return c, nil
+}
+func (l *pendingListener) Close() error   { return nil }
+func (l *pendingListener) Addr() net.Addr { return &net.TCPAddr{} }
+
+func TestConnectionAcceptedDuringStopIsClosed(t *testing.T) {
+	ln := &pendingListener{conns: make(chan net.Conn)}
+	l := &tcpListener{handle: func(c net.Conn) { _, _ = io.Copy(io.Discard, c) }, ln: ln, conns: map[net.Conn]struct{}{}}
+	served := make(chan struct{})
+	go func() {
+		l.serve(ln)
+		close(served)
+	}()
+	l.stop()
+	client, conn := net.Pipe()
+	defer client.Close()
+	ln.conns <- conn
+	close(ln.conns)
+	<-served
+	_ = client.SetReadDeadline(time.Now().Add(time.Second))
+	if _, err := client.Read(make([]byte, 1)); err != io.EOF {
+		t.Fatalf("the MJPEG connection accepted during stop is closed: %v", err)
 	}
 }

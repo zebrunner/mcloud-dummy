@@ -42,13 +42,20 @@ func main() {
 	androidCount := flag.Int("android", 0, "without a configuration: the number of Android devices (adb ports from 15555)")
 	iosCount := flag.Int("ios", 0, "without a configuration: the number of iOS devices (WDA/MJPEG ports from 18100)")
 	host := flag.String("host", os.Getenv("DUMMY_HOST"), "the address of this host the farm connects to (env DUMMY_HOST, default: the hostname)")
-	controlAddr := flag.String("control", os.Getenv("DUMMY_CONTROL"), "the listen address of the control API (env DUMMY_CONTROL, default :8800)")
+	controlAddr := flag.String("control", os.Getenv("DUMMY_CONTROL"), "the listen address of the control API (env DUMMY_CONTROL, default: control of the configuration, :8800)")
 	logLevel := flag.String("log-level", envOr("LOGGER_LEVEL", "INFO"), "DEBUG, INFO, WARN or ERROR (env LOGGER_LEVEL)")
 	healthcheck := flag.Bool("healthcheck", false, "checks the control API of a running mcloud-dummy and exits (the HEALTHCHECK of the image)")
 	flag.Parse()
 
 	if *healthcheck {
-		os.Exit(checkHealth(*controlAddr))
+		addr := *controlAddr
+		if addr == "" {
+			// the control of the devices file; an invalid file stops the program itself
+			if cfg, err := loadConfig(*configPath, *androidCount, *iosCount); err == nil {
+				addr = cfg.Control
+			}
+		}
+		os.Exit(checkHealth(addr))
 	}
 
 	var level slog.Level
@@ -68,6 +75,10 @@ func main() {
 	}
 	if *controlAddr != "" {
 		cfg.Control = *controlAddr
+	}
+	if err := cfg.CheckControl(); err != nil {
+		log.Error("invalid configuration, a restart does not fix it", "err", err)
+		os.Exit(exitConfig)
 	}
 
 	srv := &control.Server{Host: cfg.Host}
@@ -163,11 +174,12 @@ func checkHealth(addr string) int {
 	return 0
 }
 
-// farmDevices prints the device list of mcloud-agent for a configuration, or writes it into the vars of the agent.
+// farmDevices prints the device list of mcloud-agent for a configuration, or writes it into config/devices.yml of the
+// agent.
 func farmDevices(args []string) int {
 	fs := flag.NewFlagSet("farm-devices", flag.ExitOnError)
 	fs.Usage = func() {
-		fmt.Fprintln(fs.Output(), "usage: mcloud-dummy farm-devices -config devices.yml -host mcloud-dummy [-port-start 8600] [-vars roles/devices/vars/main.yml]")
+		fmt.Fprintln(fs.Output(), "usage: mcloud-dummy farm-devices -config devices.yml -host mcloud-dummy [-port-start 8600] [-vars config/devices.yml]")
 		fmt.Fprintln(fs.Output(), "prints the devices: list of mcloud-agent for the dummies (android-sim and proxy connections)")
 		fs.PrintDefaults()
 	}
@@ -175,7 +187,7 @@ func farmDevices(args []string) int {
 	host := fs.String("host", os.Getenv("DUMMY_HOST"), "the address of mcloud-dummy the connectors reach (env DUMMY_HOST)")
 	portStart := fs.Int("port-start", 8600, "the first port of the Appium and STF ports of the devices")
 	portStep := fs.Int("port-step", 20, fmt.Sprintf("the ports per device (at least %d)", farm.MinPortStep))
-	vars := fs.String("vars", "", "the vars of mcloud-agent to replace the devices: section of, in place")
+	vars := fs.String("vars", "", "config/devices.yml of mcloud-agent to replace the devices: section of, in place")
 	_ = fs.Parse(args)
 	if *configPath == "" || *host == "" {
 		fs.Usage()
