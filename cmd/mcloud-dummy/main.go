@@ -29,6 +29,15 @@ const (
 	exitRestart = 1
 )
 
+// version is set by the build of the image (-ldflags "-X main.version=<tag>")
+var version = "dev"
+
+// banner is the first log line of the service (CONVENTIONS.md#terminal-output): the heavy line, the service, its
+// version and the facts, separated by middle dots
+func banner(service, ver string, facts ...string) string {
+	return strings.Join(append([]string{"\u2501\u2501 " + service + " " + ver}, facts...), " \u00b7 ")
+}
+
 func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
@@ -64,6 +73,7 @@ func main() {
 		os.Exit(exitConfig)
 	}
 	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level}))
+	log.Info(banner("mcloud-dummy", version))
 
 	cfg, err := loadConfig(*configPath, *androidCount, *iosCount)
 	if err != nil {
