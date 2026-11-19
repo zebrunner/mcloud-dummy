@@ -75,6 +75,8 @@ check_contains "an Android device answers on its adb port" "dummy:15555" "$devic
 check_contains "WebDriverAgent answers" '"ready":true' "$(in_container wget -qO- http://127.0.0.1:18100/status)"
 check "the screen is a JPEG" "ffd8ff" "$(in_container sh -c 'wget -qO- http://127.0.0.1:8800/api/devices/dummy-android-001/screen | head -c 3 | od -An -tx1' | tr -d ' \n')"
 logs="$(docker logs "${PREFIX}-run" 2>&1)"
+check_contains "the first log line is the banner with the version of the build" $'msg="\xe2\x94\x81\xe2\x94\x81 mcloud-dummy dev"' \
+  "$(head -1 <<< "$logs")"
 check_contains "the devices are logged" 'msg="android device" serial=dummy-android-001' "$logs"
 check_not_contains "no error is logged" "level=ERROR" "$logs"
 state="$(in_container wget -qO- --post-data '{"battery":7,"charging":false,"network":"none"}' http://127.0.0.1:8800/api/devices/dummy-android-001/state)"
